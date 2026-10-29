@@ -1,0 +1,36 @@
+# Secrets: real env files never leave your machine (.env.example is tracked)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Flutter / build outputs (flutter_template and generated apps)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.metadata
+**/build/
+**/ios/Pods/
+**/android/.gradle/
+**/web/build/
+
+# Local tooling caches (not benchmark results)
+.tools/
+.uv-cache/
+.cache/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
