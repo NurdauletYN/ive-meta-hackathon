@@ -1,0 +1,19 @@
+---
+description: Hackathon boundaries and quality bar
+alwaysApply: true
+---
+# Boundaries
+- This repo is PUBLIC and standalone. Never import from, copy, or reference private Ive code, prompts, configs, or keys.
+- Everything here must be NEW work written during the hackathon. If reuse of anything pre-existing is unavoidable, stop and ask me; don't do it silently.
+- Never commit secrets. Use env vars; keep .env.example current.
+
+# Meta API
+- Do not guess model IDs, endpoints, or request shapes. Read https://dev.meta.ai/docs/quickstart, /docs/models, and https://github.com/meta-models/meta-model-cookbook first. If you cannot verify something, say so and ask.
+- Put every Meta call behind an adapter in src/meta_client with typed inputs/outputs, retries, timeouts, and usage logging (tokens, latency, cost).
+- Use Standard mode, not Contributor mode.
+
+# Quality
+- Every module has a runnable example and tests for the failure paths.
+- Anything that produces numbers (evals) must be reproducible: fixed seeds, saved raw outputs in ivebench/results/.
+- Small commits with clear messages. Update HACKATHON_SCOPE.md when a module is added.
+- Don't add features outside the current task.
