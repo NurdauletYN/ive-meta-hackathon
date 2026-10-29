@@ -1,0 +1,33 @@
+{
+  "seed": 20261030,
+  "canvas": [
+    900,
+    1200
+  ],
+  "sketches": {
+    "login.png": {
+      "expected_counts": {
+        "button": 1,
+        "text field": 2,
+        "image": 1,
+        "card": 0
+      }
+    },
+    "products.png": {
+      "expected_counts": {
+        "button": 1,
+        "text field": 0,
+        "image": 2,
+        "card": 2
+      }
+    },
+    "settings.png": {
+      "expected_counts": {
+        "button": 1,
+        "text field": 2,
+        "image": 0,
+        "card": 1
+      }
+    }
+  }
+}
