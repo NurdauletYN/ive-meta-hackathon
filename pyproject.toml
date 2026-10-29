@@ -28,4 +28,4 @@ packages = ["src/meta_client", "src/sketch2layout", "src/codegen", "src/compile_
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-pythonpath = ["src"]
+pythonpath = ["src", "scripts/day1"]
