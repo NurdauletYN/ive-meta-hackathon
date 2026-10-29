@@ -1,0 +1,7 @@
+{
+  "runs": 10,
+  "schema_valid": 10,
+  "matches_expected": 10,
+  "latency_ms_median": 5971.5,
+  "cost_usd_total": 0.0623
+}

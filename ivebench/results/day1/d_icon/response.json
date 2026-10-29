@@ -1,0 +1,17 @@
+{
+  "prompt": "App icon for a tool that turns hand-drawn sketches into mobile apps: a flat, rounded-square icon, a pencil line turning into a phone screen, bold shapes, deep blue and white, centered, no text.",
+  "requested_size": "1024x1024",
+  "decoded_size": [
+    1600,
+    1600
+  ],
+  "output_format": "png",
+  "bytes": 1170744,
+  "image_file": "icon_1024.png",
+  "usage": {
+    "images": 1,
+    "est_cost_usd": 0.01,
+    "latency_ms": 20161.2,
+    "attempts": 1
+  }
+}

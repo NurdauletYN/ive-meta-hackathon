@@ -1,0 +1,19 @@
+{
+  "sketch": "products.png",
+  "accepted": true,
+  "type_recall": 1.0,
+  "expected": {
+    "button": 1,
+    "image": 2,
+    "card": 2
+  },
+  "found": {
+    "button": 1,
+    "text field": 0,
+    "image": 2,
+    "card": 2,
+    "other": 5
+  },
+  "error": null,
+  "output_text": "{\"elements\":[{\"label\":\"Shop\",\"type\":\"other\"},{\"label\":\"\",\"type\":\"card\"},{\"label\":\"\",\"type\":\"image\"},{\"label\":\"Shoe\",\"type\":\"other\"},{\"label\":\"$40\",\"type\":\"other\"},{\"label\":\"\",\"type\":\"card\"},{\"label\":\"\",\"type\":\"image\"},{\"label\":\"Bag\",\"type\":\"other\"},{\"label\":\"$55\",\"type\":\"other\"},{\"label\":\"Add\",\"type\":\"button\"}]}"
+}

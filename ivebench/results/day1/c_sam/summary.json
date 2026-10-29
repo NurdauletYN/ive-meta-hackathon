@@ -1,0 +1,110 @@
+[
+  {
+    "sketch": "login.png",
+    "concept": "button",
+    "expected": 1,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "login.png",
+    "concept": "text field",
+    "expected": 2,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "login.png",
+    "concept": "image",
+    "expected": 1,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "login.png",
+    "concept": "card",
+    "expected": 0,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "products.png",
+    "concept": "button",
+    "expected": 1,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "products.png",
+    "concept": "text field",
+    "expected": 0,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "products.png",
+    "concept": "image",
+    "expected": 2,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "products.png",
+    "concept": "card",
+    "expected": 2,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "settings.png",
+    "concept": "button",
+    "expected": 1,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "settings.png",
+    "concept": "text field",
+    "expected": 2,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "settings.png",
+    "concept": "image",
+    "expected": 0,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  },
+  {
+    "sketch": "settings.png",
+    "concept": "card",
+    "expected": 1,
+    "found": 0,
+    "boxes": [],
+    "diagnostics": [],
+    "error": null
+  }
+]

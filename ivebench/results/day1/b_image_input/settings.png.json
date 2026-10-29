@@ -1,0 +1,19 @@
+{
+  "sketch": "settings.png",
+  "accepted": true,
+  "type_recall": 0.667,
+  "expected": {
+    "button": 1,
+    "text field": 2,
+    "card": 1
+  },
+  "found": {
+    "button": 1,
+    "text field": 2,
+    "image": 0,
+    "card": 0,
+    "other": 1
+  },
+  "error": null,
+  "output_text": "{\"elements\":[{\"label\":\"Profile\",\"type\":\"other\"},{\"label\":\"Name\",\"type\":\"text field\"},{\"label\":\"Bio\",\"type\":\"text field\"},{\"label\":\"Save\",\"type\":\"button\"}]}"
+}

@@ -1,0 +1,19 @@
+{
+  "sketch": "login.png",
+  "accepted": true,
+  "type_recall": 1.0,
+  "expected": {
+    "button": 1,
+    "text field": 2,
+    "image": 1
+  },
+  "found": {
+    "button": 1,
+    "text field": 2,
+    "image": 1,
+    "card": 0,
+    "other": 1
+  },
+  "error": null,
+  "output_text": "{\"elements\":[{\"label\":\"Sign in\",\"type\":\"other\"},{\"label\":\"\",\"type\":\"image\"},{\"label\":\"Email\",\"type\":\"text field\"},{\"label\":\"Password\",\"type\":\"text field\"},{\"label\":\"Log in\",\"type\":\"button\"}]}"
+}
