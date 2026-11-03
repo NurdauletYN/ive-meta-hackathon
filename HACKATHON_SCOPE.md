@@ -27,7 +27,8 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `src/harness/prompts.py` | done | 2026-11-03 | NEW | Byte-stable `CAPSULE_PREFIX` (cache) + bare requirements |
 | `src/pilot/*` | done | 2026-11-03 | NEW | Protocol, Fake/Muse/OpenAI-compat, budget, usage JSONL |
 | `pilots.yaml` | done | 2026-11-03 | NEW | muse / fake / baseten (`meta-models/muse-spark-open-1026`) |
-| `src/preflight/*` | done | 2026-11-03 | NEW | Seven deterministic checks + fixtures |
+| `HACKATHON_RULES.md`, `PLAN.md` | done | 2026-11-03 | NEW | Organizer rules for models + remaining work |
+| `src/preflight/*` | done | 2026-11-03 | NEW | Seven checks; search all of `lib/` (not capsule paths) |
 | `flutter_template/` | done | 2026-11-03 | NEW | Capsule: protected `lib/core/`, editable `lib/app/` |
 | `flutter_template/lib/app/features/registry.dart` | done | 2026-11-03 | NEW | Pilot-editable extra routes; one-time human core router change in `capsule.manifest.json` `core_changes` |
 | `ivebench/ideas.jsonl` | done | 2026-11-03 | NEW | 8 app ideas (no medical / mental health / nutrition / sports / job screening / political) |
