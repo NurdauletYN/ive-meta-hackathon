@@ -21,8 +21,8 @@ Track recommendation: **Indie Developer**. Problem statement: **Push the Frontie
 
 ## Phase 2 — live `design` + tester UI
 
-- [x] Local `harness ui` (demo/) so a human can run design/build/gate. Not the Ive product.
-- [x] `harness design` one idea with Muse Spark (`Porch Light` / `Community Shed` / `Good Neighbor`). Flutter web skipped; gallery HTML written.
+- [x] Local `harness ui` studio: event stream, phone frames, 3-direction pick, harness vs bare compare.
+- [x] `harness design` one idea with Muse Spark (`Porch Light` / `Community Shed` / `Good Neighbor`).
 - [ ] Playwright only if install is quick; otherwise skip.
 
 ## Phase 3 — sweep

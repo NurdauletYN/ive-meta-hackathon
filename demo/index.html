@@ -3,87 +3,67 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Rocket harness</title>
+    <title>Rocket studio</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="top">
-      <p class="kicker">ive-meta-hackathon · new this week</p>
-      <h1>Rocket harness</h1>
-      <p class="lede">
-        Locked Flutter capsule, file-op guard, store preflight. Any Pilot proposes directions
-        or emits file ops. This page is a local tester — not the Ive product.
-      </p>
+    <header class="bar">
+      <div>
+        <p class="kicker">ive-meta-hackathon · built this week</p>
+        <h1>Rocket</h1>
+      </div>
+      <p class="cost" id="cost">$0.0000</p>
     </header>
 
-    <main class="grid">
-      <form id="form" class="panel">
-        <label>
-          Idea
-          <textarea id="idea" rows="3" required placeholder="What should the app do?"></textarea>
-        </label>
-        <div class="chips" id="ideas" aria-label="Eval ideas"></div>
-        <div class="row">
-          <label>
-            Job
-            <select id="kind">
-              <option value="design">design — 3 token directions</option>
-              <option value="build">build — spec + file ops + gate</option>
-              <option value="gate">gate — analyze / optional web / preflight</option>
-            </select>
-          </label>
-          <label>
-            Pilot
-            <select id="pilot">
-              <option value="fake">fake (offline canned)</option>
-              <option value="muse">muse (Meta API, spend)</option>
-              <option value="baseten">baseten (Spark Open, spend)</option>
-            </select>
-          </label>
-        </div>
-        <div class="row">
-          <label>
-            Mode
-            <select id="mode">
-              <option value="harness">harness (capsule)</option>
-              <option value="bare">bare (blank flutter create)</option>
-            </select>
-          </label>
-          <label>
-            Run id
-            <input id="run_id" value="ui-demo" pattern="[A-Za-z0-9._-]{1,64}" />
-          </label>
-          <label>
-            Max USD
-            <input id="max_usd" type="number" min="0" step="0.1" value="3" />
-          </label>
-        </div>
-        <label class="check">
-          <input id="build_web" type="checkbox" />
-          Also run <code>flutter build web</code> (slow)
-        </label>
-        <div class="actions">
-          <button type="submit" id="go">Run</button>
-          <p id="hint">Fake first. Muse only with a cap.</p>
-        </div>
-      </form>
-
-      <section class="panel">
-        <h2>Job</h2>
-        <p id="status" class="status idle">idle</p>
-        <pre id="out" class="out">No job yet.</pre>
-        <p id="links"></p>
-      </section>
-    </main>
-
-    <section class="panel runs-panel">
-      <h2>Runs on disk</h2>
-      <ul id="runs"></ul>
+    <section class="composer">
+      <textarea id="idea" rows="2" placeholder="Describe the app…"></textarea>
+      <div class="chips" id="ideas"></div>
+      <div class="controls">
+        <select id="pilot">
+          <option value="fake">fake · offline</option>
+          <option value="muse">muse · Meta API</option>
+          <option value="baseten">baseten · Spark Open</option>
+        </select>
+        <input id="max_usd" type="number" min="0" step="0.1" value="3" title="max USD" />
+        <label class="check"><input id="build_web" type="checkbox" /> web preview</label>
+        <button type="button" id="btn-design">3 directions</button>
+        <button type="button" id="btn-build" class="primary">Build harness</button>
+        <button type="button" id="btn-compare">Compare bare</button>
+      </div>
+      <p class="hint">Fake first. Muse spends credits. Web preview runs <code>flutter build web</code> (~13s).</p>
     </section>
 
+    <main class="stage">
+      <aside class="timeline panel">
+        <h2>Log</h2>
+        <ol id="log"></ol>
+      </aside>
+
+      <section class="phones" id="phones">
+        <div class="phone-wrap" id="phone-main">
+          <p class="phone-label">preview</p>
+          <div class="phone">
+            <div class="island"></div>
+            <div class="screen" id="screen-main">
+              <p class="empty">Prompt an app. It will appear here.</p>
+            </div>
+            <div class="home"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="proof panel">
+        <h2>Gate</h2>
+        <ul class="badges" id="preflight"></ul>
+        <h2>Files</h2>
+        <ul id="files"></ul>
+        <pre id="file-view" class="file-view">Select a file.</pre>
+      </aside>
+    </main>
+
     <footer>
-      Auth and billing in the capsule are in-memory mocks. Preflight is an engineering signal,
-      not legal advice. Numbers come from <code>ivebench/results/usage.jsonl</code>.
+      Capsule auth/billing are in-memory mocks. Preflight is an engineering signal, not legal advice.
+      This UI is not the Ive product.
     </footer>
     <script src="/app.js"></script>
   </body>
