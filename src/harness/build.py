@@ -22,6 +22,7 @@ from .guard import FileOp, validate_operations
 from preflight.types import CheckStatus
 
 from .prompts import BARE_REQUIREMENTS, CAPSULE_PREFIX
+from .skin import write_skin_from_project
 from .tokens import apply_tokens
 from pilot.schemas import Direction
 
@@ -271,6 +272,17 @@ def run_build(
         apply_spec_assets(project, spec)
         stages["spec_ms"] = round((time.perf_counter() - t0) * 1000, 1)
         session.emit("stage", name="spec", status="ok", app_name=spec.app_name, ms=stages["spec_ms"])
+        items = [screen.id.replace("_", " ") for screen in spec.screens] or [slide.title for slide in spec.onboarding]
+        write_skin_from_project(
+            project,
+            title=mode,
+            app_name=spec.app_name,
+            idea=idea,
+            items=items,
+            cta=spec.paywall_cta or "Open",
+        )
+        skin_url = f"/runs/{run_dir.name}/project/skin.html"
+        session.emit("preview", url=skin_url, mode=mode, kind="skin")
 
         session.emit("stage", name="file_ops", status="start")
         t0 = time.perf_counter()
@@ -309,7 +321,7 @@ def run_build(
         stages["gate_ms"] = round((time.perf_counter() - t0) * 1000, 1)
         session.emit("stage", name="gate", status="ok" if report.ok else "fail", ms=stages["gate_ms"])
         if build_web and report.ok:
-            session.emit("preview", url=href, mode=mode)
+            session.emit("preview", url=href, mode=mode, kind="web")
     except BudgetExceeded:
         raise
     except Exception as exc:
@@ -339,11 +351,13 @@ def run_build(
         "project": str(project),
     }
     (run_dir / "result.json").write_text(json.dumps(result, indent=2, default=str) + "\n", encoding="utf-8")
+    skin_url = f"/runs/{run_dir.name}/project/skin.html"
+    preview = href if build_web and result["ok"] else (skin_url if (project / "skin.html").is_file() else None)
     session.emit(
         "done",
         ok=result["ok"],
         error=error,
-        preview=href if build_web and result["ok"] else None,
+        preview=preview,
         mode=mode,
     )
     return result

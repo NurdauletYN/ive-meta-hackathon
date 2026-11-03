@@ -7,12 +7,13 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <header class="bar">
+    <header class="top">
       <div>
         <p class="kicker">ive-meta-hackathon · built this week</p>
         <h1>Rocket</h1>
       </div>
-      <p class="cost" id="cost">$0.0000</p>
+      <p class="ticker" id="ticker">Describe an app. It appears in the phone.</p>
+      <p class="cost" id="cost">$0.00</p>
     </header>
 
     <section class="composer">
@@ -25,41 +26,42 @@
           <option value="baseten">baseten · Spark Open</option>
         </select>
         <input id="max_usd" type="number" min="0" step="0.1" value="3" title="max USD" />
-        <label class="check"><input id="build_web" type="checkbox" /> web preview</label>
-        <button type="button" id="btn-design">3 directions</button>
-        <button type="button" id="btn-build" class="primary">Build harness</button>
+        <label class="check"><input id="build_web" type="checkbox" checked /> Flutter preview</label>
+        <button type="button" id="btn-design">3 looks</button>
+        <button type="button" id="btn-build" class="primary">Build</button>
         <button type="button" id="btn-compare">Compare bare</button>
       </div>
-      <p class="hint">Fake first. Muse spends credits. Web preview runs <code>flutter build web</code> (~13s).</p>
     </section>
 
-    <main class="stage">
-      <aside class="timeline panel">
-        <h2>Log</h2>
-        <ol id="log"></ol>
-      </aside>
-
-      <section class="phones" id="phones">
-        <div class="phone-wrap" id="phone-main">
-          <p class="phone-label">preview</p>
-          <div class="phone">
-            <div class="island"></div>
-            <div class="screen" id="screen-main">
-              <p class="empty">Prompt an app. It will appear here.</p>
-            </div>
-            <div class="home"></div>
+    <main class="phones" id="phones">
+      <div class="phone-wrap" id="phone-main">
+        <p class="phone-label">preview</p>
+        <div class="phone">
+          <div class="island"></div>
+          <div class="screen">
+            <p class="empty">Your app will show up here.</p>
           </div>
+          <div class="home"></div>
         </div>
-      </section>
-
-      <aside class="proof panel">
-        <h2>Gate</h2>
-        <ul class="badges" id="preflight"></ul>
-        <h2>Files</h2>
-        <ul id="files"></ul>
-        <pre id="file-view" class="file-view">Select a file.</pre>
-      </aside>
+      </div>
     </main>
+
+    <details class="details" id="details">
+      <summary>Details · gate, files, log</summary>
+      <div class="details-grid">
+        <div>
+          <h2>Gate</h2>
+          <ul class="badges" id="preflight"></ul>
+          <h2>Files</h2>
+          <ul id="files"></ul>
+          <pre id="file-view" class="file-view">Select a file.</pre>
+        </div>
+        <div>
+          <h2>Log</h2>
+          <ol id="log"></ol>
+        </div>
+      </div>
+    </details>
 
     <footer>
       Capsule auth/billing are in-memory mocks. Preflight is an engineering signal, not legal advice.

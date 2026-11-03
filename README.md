@@ -16,7 +16,8 @@ pre-commit install                     # optional secret scan on commit
 cd flutter_template && flutter pub get && cd ..
 uv run harness gate flutter_template --build-web
 uv run pytest
-uv run harness ui --port 8765   # http://127.0.0.1:8765/  phone studio; fake first
+uv run harness ui --port 8765   # http://127.0.0.1:8765/  phone-first studio; fake first
+uv run harness sweep --pilot muse --max-usd 3   # ivebench/results/sweep/
 ```
 
 Offline Pilot loop (no API key): `FakePilot` is canned JSON for tests.
@@ -67,4 +68,4 @@ uv run harness build "Neighborhood tool library" --pilot muse --mode harness --r
 | Private Ive product code | **Not included** (adapter planned later) |
 | Ideas reimplemented here | See `HACKATHON_SCOPE.md` § pre-existing concepts |
 
-Demo GIF and eval table: not yet (full ivebench sweep not in this phase).
+Demo GIF and eval table: `harness sweep` writes `ivebench/results/sweep/`. Live numbers not in this commit yet.

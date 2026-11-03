@@ -39,18 +39,14 @@ class EventLog:
 
 
 class EventHub:
-    """Fan-out for SSE clients. Keeps a short history so late subscribers catch up."""
+    """Fan-out for SSE clients. Live events only — history replay mixed old jobs into the UI."""
 
-    def __init__(self, maxlen: int = 400) -> None:
+    def __init__(self) -> None:
         self._lock = threading.Lock()
         self._subs: list[Queue] = []
-        self._history: list[dict[str, Any]] = []
-        self._maxlen = maxlen
 
     def publish(self, event: dict[str, Any]) -> None:
         with self._lock:
-            self._history.append(event)
-            self._history = self._history[-self._maxlen :]
             subs = list(self._subs)
         for queue in subs:
             queue.put(event)
@@ -58,8 +54,6 @@ class EventHub:
     def subscribe(self) -> Queue:
         queue: Queue = Queue()
         with self._lock:
-            for event in self._history:
-                queue.put(event)
             self._subs.append(queue)
         return queue
 

@@ -16,6 +16,7 @@ from harness.build import run_build
 from harness.design import pick_direction, run_design
 from harness.gate import gate_json, run_gate
 from harness.serve import serve
+from harness.sweep import load_ideas, run_sweep
 from harness.ui import serve_ui
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -56,6 +57,12 @@ def main(argv: list[str] | None = None) -> None:
 
     ui = sub.add_parser("ui", help="Local dashboard to run design/build/gate")
     ui.add_argument("--port", type=int, default=8765)
+
+    sweep = sub.add_parser("sweep", help="Each idea × harness/bare into ivebench/results")
+    sweep.add_argument("--pilot", default="muse")
+    sweep.add_argument("--max-usd", type=float, default=3)
+    sweep.add_argument("--limit", type=int, default=None)
+    sweep.add_argument("--build-web", action="store_true")
 
     args = parser.parse_args(argv)
     try:
@@ -110,6 +117,28 @@ def _dispatch(args: argparse.Namespace) -> None:
         )
         print(json.dumps(result, indent=2, default=str))
         sys.exit(0 if result["ok"] else 1)
+
+    if args.command == "sweep":
+        ideas = load_ideas(ROOT / "ivebench" / "ideas.jsonl")
+        if args.limit:
+            ideas = ideas[: args.limit]
+
+        def make_session(run_id: str, max_usd: float | None) -> PilotSession:
+            return _session(args.pilot, run_id, max_usd)
+
+        summary = run_sweep(
+            ideas=ideas,
+            make_session=make_session,
+            capsule=ROOT / "flutter_template",
+            out_dir=ROOT / "ivebench" / "results" / "sweep",
+            runs=ROOT / "runs",
+            usage_path=ROOT / DEFAULT_USAGE_PATH,
+            max_usd=args.max_usd,
+            build_web=args.build_web,
+        )
+        print(json.dumps(summary, indent=2, default=str))
+        failed = any(not r.get("ok") and not r.get("skipped") for r in summary["rows"])
+        sys.exit(1 if failed else 0)
 
 
 if __name__ == "__main__":
