@@ -27,7 +27,7 @@ Track recommendation: **Indie Developer**. Problem statement: **Push the Frontie
 
 ## Phase 3 — sweep
 
-- [ ] 8 ideas × harness/bare on Muse Spark (`uv run harness sweep --pilot muse --max-usd 3`).
+- [ ] 8 ideas × muse,baseten × harness/bare (`uv run harness sweep --max-usd 8`). Do not run until tagged.
 - [ ] Same on Baseten Muse Spark Open if keys exist. Cut Baseten at 15:00 if unfinished.
 - [ ] Commit raw `ivebench/results/` and a results table.
 

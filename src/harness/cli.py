@@ -16,7 +16,7 @@ from harness.build import run_build
 from harness.design import pick_direction, run_design
 from harness.gate import gate_json, run_gate
 from harness.serve import serve
-from harness.sweep import load_ideas, run_sweep
+from harness.sweep import DirtyTreeError, load_ideas, run_sweep
 from harness.ui import serve_ui
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -58,11 +58,14 @@ def main(argv: list[str] | None = None) -> None:
     ui = sub.add_parser("ui", help="Local dashboard to run design/build/gate")
     ui.add_argument("--port", type=int, default=8765)
 
-    sweep = sub.add_parser("sweep", help="Each idea × harness/bare into ivebench/results")
-    sweep.add_argument("--pilot", default="muse")
-    sweep.add_argument("--max-usd", type=float, default=3)
+    sweep = sub.add_parser("sweep", help="Each idea × live pilots × harness/bare into ivebench/results")
+    sweep.add_argument("--pilots", default="muse,baseten", help="comma-separated --pilot names")
+    sweep.add_argument("--max-usd", type=float, default=8)
+    sweep.add_argument("--max-usd-per-pilot", type=float, default=4)
     sweep.add_argument("--limit", type=int, default=None)
     sweep.add_argument("--build-web", action="store_true")
+    sweep.add_argument("--call-timeout", type=float, default=300)
+    sweep.add_argument("--run-timeout", type=float, default=900)
 
     args = parser.parse_args(argv)
     try:
@@ -70,6 +73,9 @@ def main(argv: list[str] | None = None) -> None:
     except BudgetExceeded as exc:
         print(json.dumps({"ok": False, "error": "budget_exceeded", "message": str(exc)}), file=sys.stderr)
         sys.exit(3)
+    except DirtyTreeError as exc:
+        print(json.dumps({"ok": False, "error": "dirty_tree", "message": str(exc)}), file=sys.stderr)
+        sys.exit(2)
 
 
 def _dispatch(args: argparse.Namespace) -> None:
@@ -122,9 +128,10 @@ def _dispatch(args: argparse.Namespace) -> None:
         ideas = load_ideas(ROOT / "ivebench" / "ideas.jsonl")
         if args.limit:
             ideas = ideas[: args.limit]
+        names = [p.strip() for p in args.pilots.split(",") if p.strip()]
 
-        def make_session(run_id: str, max_usd: float | None) -> PilotSession:
-            return _session(args.pilot, run_id, max_usd)
+        def make_session(run_id: str, pilot_name: str, max_usd: float | None) -> PilotSession:
+            return _session(pilot_name, run_id, max_usd)
 
         summary = run_sweep(
             ideas=ideas,
@@ -133,11 +140,18 @@ def _dispatch(args: argparse.Namespace) -> None:
             out_dir=ROOT / "ivebench" / "results" / "sweep",
             runs=ROOT / "runs",
             usage_path=ROOT / DEFAULT_USAGE_PATH,
+            pilots=names,
             max_usd=args.max_usd,
+            max_usd_per_pilot=args.max_usd_per_pilot,
             build_web=args.build_web,
+            git_repo=ROOT,
+            require_clean_git=True,
+            call_timeout_s=args.call_timeout,
+            run_timeout_s=args.run_timeout,
+            log_path=ROOT / "runs" / "sweep.log",
         )
         print(json.dumps(summary, indent=2, default=str))
-        failed = any(not r.get("ok") and not r.get("skipped") for r in summary["rows"])
+        failed = any(r.get("outcome") == "quality_fail" for r in summary["rows"])
         sys.exit(1 if failed else 0)
 
 

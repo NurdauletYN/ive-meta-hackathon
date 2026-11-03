@@ -40,7 +40,8 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `src/harness/events.py` | done | 2026-11-03 | NEW | Run event jsonl + in-process hub (live SSE, no history replay) |
 | `src/harness/web_build.py` | done | 2026-11-03 | NEW | `flutter build web --base-href` so iframe previews resolve |
 | `src/harness/skin.py` | done | 2026-11-04 | NEW | Immediate HTML phone screen from tokens while Flutter builds |
-| `src/harness/sweep.py` | done | 2026-11-04 | NEW | ivebench idea × harness/bare sweep with a global `--max-usd` |
+| `src/harness/sweep.py` | done | 2026-11-04 | NEW | ideas × live pilots × harness/bare; infra vs quality; resume; dirty-tree refusal |
+| `src/harness/classify.py` | done | 2026-11-04 | NEW | pass / quality_fail / infra_fail |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 
