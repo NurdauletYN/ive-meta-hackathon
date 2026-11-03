@@ -20,7 +20,7 @@ Author for all Day 1 work: NurdauletYN, with a Cursor coding agent. Dates are co
 | `src/meta_client/images.py` | done (Day 1) | 2026-10-30 | NEW | Muse Image over `/v1/images/generations`. |
 | `src/meta_client/segmentation.py` | done (Day 1) | 2026-10-30 | NEW (uses third-party parser) | SAM 3.1 on images. Parsing and mask decoding by `meta-sam-parser`. |
 | `tests/test_meta_client.py` | done (Day 1) | 2026-10-30 | NEW | 39 offline tests: failure paths, retries, parsing. No network, no key. |
-| `scripts/day1/` | in progress | 2026-10-30 | NEW | Smoke tests a–d from the kickoff prompt. |
+| `scripts/day1/` | run; (c) and (d) failed | 2026-10-30 | NEW | Smoke tests a–d. Results and failures in `docs/day1-findings.md`. |
 | `src/sketch2layout/` | not started | — | — | Day 2. Placeholder package only. |
 | `src/codegen/` | not started | — | — | Day 2. Placeholder package only. |
 | `src/compile_runner/` | not started | — | — | Day 3. Placeholder package only. |

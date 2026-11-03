@@ -1,0 +1,15 @@
+{
+  "run": 4,
+  "response_id": "resp_6ae3bae1ada1aa85ac1e445c",
+  "schema_valid": true,
+  "matches_expected": true,
+  "problems": [],
+  "output_text": "{\"operations\": [{\"content\": null, \"find\": \"Text('Hello')\", \"op\": \"patch\", \"path\": \"lib/main.dart\", \"replace\": \"Text('Welcome')\"}, {\"content\": \"import 'package:flutter/material.dart';\\n\\nclass CustomCard extends StatelessWidget {\\n  final String title;\\n\\n  const CustomCard({super.key, required this.title});\\n\\n  @override\\n  Widget build(BuildContext context) {\\n    return Card(\\n      child: Padding(\\n        padding: const EdgeInsets.all(16.0),\\n        child: Text(title),\\n      ),\\n    );\\n  }\\n}\\n\", \"find\": null, \"op\": \"write\", \"path\": \"lib/widgets/card.dart\", \"replace\": null}, {\"content\": null, \"find\": null, \"op\": \"delete\", \"path\": \"lib/old_screen.dart\", \"replace\": null}]}",
+  "usage": {
+    "input_tokens": 132,
+    "output_tokens": 1338,
+    "reasoning_tokens": 1131,
+    "est_cost_usd": 0.0058515,
+    "latency_ms": 5250.0
+  }
+}
