@@ -11,12 +11,13 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from pilot.protocol import BudgetExceeded
 from pilot.schemas import APP_SPEC_SCHEMA, FILE_OPS_SCHEMA, AppSpec, schema_errors
 from pilot.session import PilotSession
 
 from .apply import apply_operations
 from .copy_project import copy_tree
-from .gate import GateReport, run_gate
+from .gate import GateReport, StepResult, run_gate
 from .guard import FileOp, validate_operations
 from preflight.types import CheckStatus
 
@@ -224,43 +225,68 @@ def run_build(
         raise ValueError("mode must be harness or bare")
     stages["prepare_ms"] = round((time.perf_counter() - t0) * 1000, 1)
 
-    t0 = time.perf_counter()
-    spec: AppSpec = _schema_loop(
-        session,
-        system,
-        f"Write an AppSpec for this idea:\n{idea}",
-        APP_SPEC_SCHEMA,
-        "spec",
-        AppSpec,
-    )
-    (run_dir / "spec.json").write_text(spec.model_dump_json(indent=2) + "\n", encoding="utf-8")
-    apply_spec_assets(project, spec)
-    stages["spec_ms"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    build_user = (
-        f"AppSpec:\n{spec.model_dump_json()}\n\nEmit file operations to implement the spec inside the project."
-    )
-    ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)
-    stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
-
-    t0 = time.perf_counter()
-    report = gate(project)
+    spec: AppSpec | None = None
+    ops_log: dict[str, Any] = {}
+    report: GateReport | None = None
     repair_rounds = 0
-    while not report.ok and repair_rounds < MAX_GATE_REPAIRS:
-        repair_rounds += 1
-        fail_text = _failing_text(report)
-        files = _read_relevant_files(project)
-        request_and_apply_ops(
+    error: str | None = None
+    try:
+        t0 = time.perf_counter()
+        spec = _schema_loop(
             session,
             system,
-            build_user,
-            project,
-            allowed_prefixes=allowed,
-            extra_feedback=f"Gate failed (round {repair_rounds}). Fix ONLY these errors:\n{fail_text}\n\nRelevant files:\n{files}",
+            (
+                f"Write an AppSpec for this idea:\n{idea}\n\n"
+                "Keep it small: at most 2 screens and 1 data model. Short copy."
+            ),
+            APP_SPEC_SCHEMA,
+            "spec",
+            AppSpec,
         )
+        (run_dir / "spec.json").write_text(spec.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        apply_spec_assets(project, spec)
+        stages["spec_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+
+        t0 = time.perf_counter()
+        build_user = (
+            f"AppSpec:\n{spec.model_dump_json()}\n\n"
+            "Emit at most 3 file operations. Implement ONE list screen plus a registry write. "
+            "Each Dart file under 60 lines. Writes use content; find and replace must be JSON null. "
+            "Do not recreate auth, paywall, settings, terms, or privacy."
+        )
+        ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)
+        stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+
+        t0 = time.perf_counter()
         report = gate(project)
-    stages["gate_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        while not report.ok and repair_rounds < MAX_GATE_REPAIRS:
+            repair_rounds += 1
+            fail_text = _failing_text(report)
+            files = _read_relevant_files(project)
+            request_and_apply_ops(
+                session,
+                system,
+                build_user,
+                project,
+                allowed_prefixes=allowed,
+                extra_feedback=(
+                    f"Gate failed (round {repair_rounds}). Fix ONLY these errors:\n{fail_text}\n\n"
+                    f"Relevant files:\n{files}"
+                ),
+            )
+            report = gate(project)
+        stages["gate_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+    except BudgetExceeded:
+        raise
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+        if report is None:
+            report = GateReport(
+                project_dir=str(project),
+                ok=False,
+                steps=[StepResult("exception", False, 0.0, error)],
+                preflight=[],
+            )
 
     token_totals = _token_totals(session.usage_path, session.run_id)
     result = {
@@ -268,8 +294,9 @@ def run_build(
         "mode": mode,
         "idea": idea,
         "run_id": session.run_id,
-        "ok": report.ok,
-        "gate": _gate_summary(report),
+        "ok": bool(report and report.ok),
+        "error": error,
+        "gate": _gate_summary(report) if report is not None else None,
         "repair_rounds": repair_rounds,
         "ops": ops_log,
         "tokens": token_totals,

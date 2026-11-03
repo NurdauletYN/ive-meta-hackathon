@@ -408,6 +408,28 @@ def test_guard_violation_is_fed_back_then_applied(tmp_path: Path) -> None:
     assert (tmp_path / "run" / "project" / "lib" / "app" / "features" / "notes" / "notes_screen.dart").is_file()
 
 
+def test_build_writes_result_json_when_pilot_raises(tmp_path: Path) -> None:
+    fake = FakePilot()
+    fake.enqueue("spec", APP_SPEC)
+    fake.enqueue("file_ops", RuntimeError("timeout: read timed out"))
+    session = _session(fake, tmp_path, "err-1")
+    result = run_build(
+        "tool_library",
+        session,
+        mode="harness",
+        run_dir=tmp_path / "run",
+        capsule=CAPSULE,
+        gate_fn=_pass_gate,
+        build_web=False,
+    )
+    path = tmp_path / "run" / "result.json"
+    assert path.is_file()
+    saved = json.loads(path.read_text(encoding="utf-8"))
+    assert saved["ok"] is False
+    assert "timeout" in (saved.get("error") or "")
+    assert result["ok"] is False
+
+
 def test_one_gate_repair_round(tmp_path: Path) -> None:
     n = {"i": 0}
 

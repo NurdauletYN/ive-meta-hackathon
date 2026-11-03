@@ -34,9 +34,24 @@ class PilotSession:
     ) -> dict[str, Any]:
         if self.budget is not None:
             self.budget.check()
-        obj, usage = self.pilot.complete_json(system, user, schema, tag)
-        self.last_usage = usage
         model = getattr(self.pilot, "model", self.pilot.name)
+        try:
+            obj, usage = self.pilot.complete_json(system, user, schema, tag)
+        except BudgetExceeded:
+            raise
+        except Exception as exc:
+            append_usage(
+                self.usage_path,
+                run_id=self.run_id,
+                pilot=self.pilot.name,
+                stage=tag,
+                usage=Usage(0, 0, 0, 0.0, None),
+                model=str(model),
+                ok=False,
+                error=str(exc)[:500],
+            )
+            raise
+        self.last_usage = usage
         append_usage(
             self.usage_path,
             run_id=self.run_id,
@@ -46,8 +61,5 @@ class PilotSession:
             model=str(model),
         )
         if self.budget is not None:
-            try:
-                self.budget.check()
-            except BudgetExceeded:
-                raise
+            self.budget.check()
         return obj
