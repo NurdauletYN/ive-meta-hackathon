@@ -13,6 +13,7 @@ import binascii
 import io
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from PIL import Image, UnidentifiedImageError
@@ -109,3 +110,32 @@ class MuseImage:
 def _image_usage_fields(model: str, payload: dict[str, Any]) -> dict[str, Any]:
     count = len(payload.get("data") or [])
     return {"images": count, "est_cost_usd": image_cost_usd(model, count)}
+
+
+def resize_lanczos_to_square(data: bytes, size: int = 1024) -> tuple[bytes, int, int]:
+    """Resize decoded image bytes to ``size×size`` with Lanczos. Returns PNG bytes and dimensions."""
+    with Image.open(io.BytesIO(data)) as img:
+        rgb = img.convert("RGB")
+        resized = rgb.resize((size, size), Image.Resampling.LANCZOS)
+        out = io.BytesIO()
+        resized.save(out, format="PNG", optimize=True)
+        return out.getvalue(), size, size
+
+
+def save_png_pair(
+    raw_path: Path,
+    raw_bytes: bytes,
+    *,
+    resized_path: Path | None = None,
+    target_size: int = 1024,
+) -> tuple[Path, Path | None]:
+    """Write the raw API bytes, then optionally write a Lanczos-resized PNG beside it."""
+    raw_path = Path(raw_path)
+    raw_path.parent.mkdir(parents=True, exist_ok=True)
+    raw_path.write_bytes(raw_bytes)
+    if resized_path is None:
+        return raw_path, None
+    resized_bytes, _, _ = resize_lanczos_to_square(raw_bytes, target_size)
+    resized_path = Path(resized_path)
+    resized_path.write_bytes(resized_bytes)
+    return raw_path, resized_path

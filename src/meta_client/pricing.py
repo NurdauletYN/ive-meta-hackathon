@@ -25,9 +25,6 @@ MUSE_IMAGE_PRICE_PER_IMAGE: dict[str, float] = {
     "muse-image-1.0": 0.01,  # flat per generated image
 }
 
-SAM_IMAGE_PRICE_PER_IMAGE = 2.50 / 1000  # $2.50 per 1,000 images
-SAM_VIDEO_PRICE_PER_FRAME = 0.20 / 1000  # $0.20 per 1,000 frames (not used on Day 1)
-
 
 def text_cost_usd(
     model: str,
@@ -51,7 +48,3 @@ def text_cost_usd(
 def image_cost_usd(model: str, images: int) -> float | None:
     per_image = MUSE_IMAGE_PRICE_PER_IMAGE.get(model)
     return None if per_image is None else per_image * images
-
-
-def sam_image_cost_usd(images: int) -> float:
-    return SAM_IMAGE_PRICE_PER_IMAGE * images
