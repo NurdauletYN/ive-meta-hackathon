@@ -27,4 +27,6 @@ Requirements in plain words:
 - A settings screen that reaches delete-account, restore-purchases, privacy, and terms.
 
 You get a blank Flutter project. There is no scaffold and no protected-path list. pubspec.yaml is locked (do not change dependencies). Use the same file-operations JSON (write/patch/delete). No TODO, no lorem ipsum, no default Flutter demo strings.
+
+Preflight searches all of lib/ (paths need not match the capsule). Put privacy and terms links on both a settings-named screen and a paywall-named screen; put auto-renew/cancel wording next to the purchase CTA; write lib/app/design_tokens.json with WCAG AA contrast_pairs.
 """

@@ -28,6 +28,22 @@ def test_pass_project_all_checks_pass() -> None:
     assert all(r.status == CheckStatus.PASS for r in results), [r for r in results if r.status != CheckStatus.PASS]
 
 
+def test_relocated_layout_still_passes(tmp_path: Path) -> None:
+    """Bare mode may put screens anywhere under lib/; capsule paths must not be required."""
+    import shutil
+
+    dest = tmp_path / "relocated"
+    shutil.copytree(PASS, dest)
+    lib = dest / "lib"
+    (lib / "screens").mkdir(parents=True)
+    shutil.move(lib / "core" / "settings" / "settings_screen.dart", lib / "screens" / "settings_page.dart")
+    shutil.move(lib / "core" / "paywall" / "paywall_screen.dart", lib / "screens" / "paywall_page.dart")
+    (lib / "theme").mkdir(parents=True)
+    shutil.move(lib / "app" / "design_tokens.json", lib / "theme" / "design_tokens.json")
+    results = run_preflight(dest)
+    assert all(r.status == CheckStatus.PASS for r in results), [r for r in results if r.status != CheckStatus.PASS]
+
+
 @pytest.mark.parametrize(
     ("fixture", "check_fn", "check_id"),
     [

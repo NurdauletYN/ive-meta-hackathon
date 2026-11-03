@@ -1,19 +1,29 @@
 ---
-description: Hackathon boundaries and quality bar
+description: Hackathon boundaries and quality bar for every model in this repo
 alwaysApply: true
 ---
+
+Read and follow `HACKATHON_RULES.md` in the repo root. Summary:
+
 # Boundaries
-- This repo is PUBLIC and standalone. Never import from, copy, or reference private Ive code, prompts, configs, or keys.
-- Everything here must be NEW work written during the hackathon. If reuse of anything pre-existing is unavoidable, stop and ask me; don't do it silently.
-- Never commit secrets. Use env vars; keep .env.example current.
+- This repo must be PUBLIC at submission and is standalone. Never import from, copy, or reference private Ive code, prompts, configs, or keys. Do not use the existing Ive front end.
+- Everything shown must be NEW work written during the hackathon (Oct 27 – Nov 4 2026). If reuse of anything pre-existing is unavoidable, stop and ask; don't do it silently.
+- Never commit secrets. Use env vars; keep `.env.example` current.
+- Submission due Wed Nov 4, 9:00 PM ET (= Nov 5, 07:00 UTC+5). Late submissions are not considered.
 
 # Meta API
 - Do not guess model IDs, endpoints, or request shapes. Read https://dev.meta.ai/docs/quickstart, /docs/models, and https://github.com/meta-models/meta-model-cookbook first. If you cannot verify something, say so and ask.
-- Put every Meta call behind an adapter in src/meta_client with typed inputs/outputs, retries, timeouts, and usage logging (tokens, latency, cost).
+- Put every Meta call behind `src/meta_client` or `src/pilot` with typed inputs/outputs, retries, timeouts, and usage logging (tokens, cached tokens, latency, cost).
 - Use Standard mode, not Contributor mode.
+- Baseten model id is `meta-models/muse-spark-open-1026` (not `meta-models/muse-spark-open`).
+
+# Banned topics
+Never build or generate: medical/mental-health advice, skin detectors, job screeners, nutrition/personality/sports coaches, political or war content, basic RAG, simple image analyzers, simple education chatbots.
 
 # Quality
 - Every module has a runnable example and tests for the failure paths.
-- Anything that produces numbers (evals) must be reproducible: fixed seeds, saved raw outputs in ivebench/results/.
-- Small commits with clear messages. Update HACKATHON_SCOPE.md when a module is added.
-- Don't add features outside the current task.
+- Anything that produces numbers (evals) must be reproducible: fixed inputs, raw outputs in `ivebench/results/`, cost from `usage.jsonl`.
+- Report failures honestly. Never present a path-biased comparison as a result.
+- Small commits, feature branches, merge-commit PRs. Update `HACKATHON_SCOPE.md` when a module is added.
+- Don't add features outside the current task. Ask first.
+- Live calls need `--max-usd`. Offline tests use FakePilot.

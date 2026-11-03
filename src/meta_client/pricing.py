@@ -16,9 +16,16 @@ class TokenPrice:
     output_per_m: float
 
 
-# Muse Spark 1.3, Standard mode, per 1M tokens.
+# Muse Spark 1.3 Standard: https://dev.meta.ai/docs/pricing-rate-limits (read 2026-11-03).
+# Muse Spark Open on Baseten: same $/1M as Spark Standard on Baseten's public model list
+# (www.baseten.co/pricing, observed 2026-11-03). Official Meta Model API page does not
+# list the open-weight id; unknown ids still return None.
+_SPARK_STANDARD = TokenPrice(input_per_m=1.25, cached_input_per_m=0.15, output_per_m=4.25)
 TEXT_PRICES: dict[str, TokenPrice] = {
-    "muse-spark-1.3": TokenPrice(input_per_m=1.25, cached_input_per_m=0.15, output_per_m=4.25),
+    "muse-spark-1.3": _SPARK_STANDARD,
+    "muse-spark-open": _SPARK_STANDARD,
+    "meta-models/muse-spark-open": _SPARK_STANDARD,
+    "meta-models/muse-spark-open-1026": _SPARK_STANDARD,
 }
 
 MUSE_IMAGE_PRICE_PER_IMAGE: dict[str, float] = {
