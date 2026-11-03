@@ -22,7 +22,16 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      GoRoute(
+        path: '/',
+        builder: (context, state) {
+          final extras = extraFeatureRoutes();
+          if (extras.isNotEmpty) {
+            return extras.first.builder(context);
+          }
+          return const HomeScreen();
+        },
+      ),
       GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
       GoRoute(
         path: '/settings',

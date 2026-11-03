@@ -77,6 +77,21 @@ function badge(ok) {
   return span;
 }
 
+function draftBadge() {
+  const span = document.createElement("span");
+  span.className = "badge draft";
+  span.textContent = "draft";
+  return span;
+}
+
+function setStep(name) {
+  const steps = document.getElementById("steps");
+  if (!steps) return;
+  for (const li of steps.querySelectorAll("li")) {
+    li.classList.toggle("on", li.dataset.step === name);
+  }
+}
+
 function setLabel(wrap, text) {
   const caption = wrap.querySelector(".phone-label");
   const slot = caption.querySelector(".badge-slot");
@@ -162,8 +177,8 @@ function handle(ev) {
     ticker(`Repairing (round ${ev.round})…`, "busy");
     log(`repair round ${ev.round}`, "fail");
   } else if (type === "preview") {
-    showPreview(ev.run_id, ev.url, ev.mode);
-    if (ev.kind === "skin") ticker("Preview of the look — writing screens…", "busy");
+    showPreview(ev.run_id, ev.url, ev.mode, ev.kind);
+    if (ev.kind === "skin") ticker("Draft look — writing screens…", "busy");
     if (ev.kind === "web") ticker("Live Flutter preview", "ok");
   } else if (type === "direction") {
     showDirection(ev);
@@ -174,7 +189,7 @@ function handle(ev) {
     if (card) card.classList.add("picked");
   } else if (type === "done") {
     log(`${ev.run_id} done ${ev.ok ? "ok" : "fail"}`, ev.ok ? "ok" : "fail");
-    if (ev.preview) showPreview(ev.run_id, ev.preview, ev.mode);
+    if (ev.preview) showPreview(ev.run_id, ev.preview, ev.mode, ev.kind);
     ticker(ev.ok ? "Ready" : (ev.error || "Failed"), ev.ok ? "ok" : "fail");
     const wrap = document.getElementById(`phone-${ev.run_id}`);
     if (wrap) {
@@ -186,8 +201,10 @@ function handle(ev) {
   }
 }
 
-function showPreview(runId, url, mode) {
+function showPreview(runId, url, mode, kind) {
   const wrap = ensurePhone(runId, mode);
+  const slot = wrap.querySelector(".badge-slot");
+  if (slot) slot.replaceChildren(kind === "skin" ? draftBadge() : document.createTextNode(""));
   setScreen(wrap.querySelector(".screen"), iframe(url));
 }
 
@@ -260,6 +277,7 @@ async function run(kind, extra) {
     active.add(body.run_id);
     resetSession();
     mountDirectionSlots();
+    setStep("looks");
     ticker("Designing three looks…", "busy");
   }
   if (kind === "build") {
@@ -273,12 +291,14 @@ async function run(kind, extra) {
     const card = phoneCard({ id: `phone-${body.run_id}`, label: body.mode, small: false });
     $("phones").appendChild(card);
     setScreen(card.querySelector(".screen"), waiting("Building your app…"));
+    setStep("build");
     ticker("Building…", "busy");
   }
   if (kind === "compare") {
     body.run_id = extra.run_id || slug("cmp");
     if (designRun) body.choice_from = designRun;
     resetSession();
+    setStep("compare");
     ticker("Building harness and bare side by side…", "busy");
   }
   const started = await api(`/api/${kind}`, {

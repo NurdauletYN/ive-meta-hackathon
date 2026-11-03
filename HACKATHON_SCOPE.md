@@ -28,9 +28,10 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `src/pilot/*` | done | 2026-11-03 | NEW | Protocol, Fake/Muse/OpenAI-compat, budget, usage JSONL |
 | `pilots.yaml` | done | 2026-11-03 | NEW | muse / fake / baseten (`meta-models/muse-spark-open-1026`) |
 | `HACKATHON_RULES.md`, `PLAN.md` | done | 2026-11-03 | NEW | Organizer rules for models + remaining work |
-| `src/preflight/*` | done | 2026-11-03 | NEW | Seven checks; search all of `lib/` (not capsule paths) |
+| `src/preflight/*` | done | 2026-11-04 | NEW | Eight checks; `interactive_home` WARNs on a static generated screen |
+| `src/harness/branding.py` | done | 2026-11-04 | NEW | Writes spec `app_name` into strings.dart, web title, manifest |
 | `flutter_template/` | done | 2026-11-03 | NEW | Capsule: protected `lib/core/`, editable `lib/app/` |
-| `flutter_template/lib/app/features/registry.dart` | done | 2026-11-03 | NEW | Pilot-editable extra routes; one-time human core router change in `capsule.manifest.json` `core_changes` |
+| `flutter_template/lib/app/features/registry.dart` | done | 2026-11-03 | NEW | Pilot-editable extra routes; first entry is home. Core router change in `capsule.manifest.json` `core_changes` |
 | `ivebench/ideas.jsonl` | done | 2026-11-03 | NEW | 8 app ideas (no medical / mental health / nutrition / sports / job screening / political) |
 | `docs/preflight.md` | done | 2026-11-03 | NEW | Check descriptions; not legal advice |
 | `tests/test_guard.py`, `test_preflight.py`, `test_pilot.py` | done | 2026-11-03 | NEW | Guard, preflight, FakePilot e2e (repair, guard, invalid JSON, budget) |

@@ -56,6 +56,8 @@ def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
         assert "Rocket studio" in page.text
         assert 'id="ticker"' in page.text
         assert "<summary>" in page.text
+        assert 'id="steps"' in page.text
+        assert "draft" in page.text or "looks" in page.text
         started = httpx.post(
             f"{base}/api/design",
             json={"idea": "swap books", "pilot": "fake", "run_id": "http-d", "build_web": False},

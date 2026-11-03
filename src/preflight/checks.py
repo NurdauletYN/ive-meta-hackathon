@@ -287,6 +287,50 @@ def check_wcag_contrast(project: Path) -> CheckResult:
     return CheckResult(check_id, CheckStatus.PASS, "design token text/background pairs meet WCAG AA")
 
 
+_STATEFUL = re.compile(
+    r"\bStatefulWidget\b|\bsetState\s*\(|\bChangeNotifier\b|\bValueNotifier\b"
+)
+
+
+def check_interactive_home(project: Path) -> CheckResult:
+    """WARN when a generated extra feature exists but has no in-memory state."""
+    check_id = "interactive_home"
+    registry = None
+    for path, text in _lib_dart(project):
+        if path.name == "registry.dart" and "extraFeatureRoutes" in text:
+            registry = (path, text)
+            break
+    if registry is None:
+        return CheckResult(check_id, CheckStatus.PASS, "no extra feature registry")
+    path, text = registry
+    if "FeatureRoute(" not in text:
+        return CheckResult(check_id, CheckStatus.PASS, "no generated extra features")
+    features_dir = path.parent
+    for dart_path, src in _lib_dart(project):
+        try:
+            dart_path.relative_to(features_dir)
+        except ValueError:
+            continue
+        if dart_path.name in {"registry.dart", "home_screen.dart"}:
+            continue
+        if _STATEFUL.search(src):
+            line = _line_of(src, "StatefulWidget") or _line_of(src, "setState") or 1
+            return CheckResult(
+                check_id,
+                CheckStatus.PASS,
+                "generated feature has in-memory state",
+                _rel(project, dart_path),
+                line,
+            )
+    return CheckResult(
+        check_id,
+        CheckStatus.WARN,
+        "generated home screen has no StatefulWidget or setState",
+        _rel(project, path),
+        _line_of(text, "extraFeatureRoutes") or 1,
+    )
+
+
 ALL_CHECKS = (
     check_privacy_links,
     check_terms_links,
@@ -295,4 +339,5 @@ ALL_CHECKS = (
     check_subscription_disclosure,
     check_no_placeholders,
     check_wcag_contrast,
+    check_interactive_home,
 )

@@ -61,14 +61,43 @@ APP_SPEC = {
 
 NOTES_DART = """import 'package:flutter/material.dart';
 
-class NotesScreen extends StatelessWidget {
+class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
+  @override
+  State<NotesScreen> createState() => _NotesScreenState();
+}
+
+class _NotesScreenState extends State<NotesScreen> {
+  final items = <String>['Hammer'];
+  final controller = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Notes')),
-      body: const Center(child: Text('No notes yet')),
+      body: Column(children: [
+        TextField(controller: controller, decoration: const InputDecoration(hintText: 'Add a tool')),
+        FilledButton(
+          onPressed: () {
+            final text = controller.text.trim();
+            if (text.isEmpty) return;
+            setState(() { items.add(text); controller.clear(); });
+          },
+          child: const Text('Add'),
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (c, i) => ListTile(
+              title: Text(items[i]),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => setState(() => items.removeAt(i)),
+              ),
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }

@@ -8,6 +8,7 @@ import pytest
 from preflight.checks import (
     ALL_CHECKS,
     check_account_deletion,
+    check_interactive_home,
     check_no_placeholders,
     check_privacy_links,
     check_restore_purchases,
@@ -67,3 +68,49 @@ def test_fail_fixture_triggers_exactly_one_check(
     for other in others:
         result = other(project)
         assert result.status == CheckStatus.PASS, (other.__name__, result)
+
+
+def test_interactive_home_pass_without_registry() -> None:
+    assert check_interactive_home(PASS).status == CheckStatus.PASS
+
+
+def test_interactive_home_warns_when_feature_is_stateless(tmp_path: Path) -> None:
+    features = tmp_path / "lib" / "app" / "features"
+    (features / "notes").mkdir(parents=True)
+    (features / "registry.dart").write_text(
+        "List<FeatureRoute> extraFeatureRoutes() {\n"
+        "  return [FeatureRoute(path: '/notes', label: 'Notes', builder: (c) => const NotesScreen())];\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    (features / "notes" / "notes_screen.dart").write_text(
+        "class NotesScreen extends StatelessWidget {\n"
+        "  const NotesScreen();\n"
+        "  Widget build(c) => const Text('static');\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    result = check_interactive_home(tmp_path)
+    assert result.status == CheckStatus.WARN
+    assert result.check_id == "interactive_home"
+
+
+def test_interactive_home_pass_when_stateful(tmp_path: Path) -> None:
+    features = tmp_path / "lib" / "app" / "features"
+    (features / "notes").mkdir(parents=True)
+    (features / "registry.dart").write_text(
+        "List<FeatureRoute> extraFeatureRoutes() {\n"
+        "  return [FeatureRoute(path: '/notes', label: 'Notes', builder: (c) => const NotesScreen())];\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    (features / "notes" / "notes_screen.dart").write_text(
+        "class NotesScreen extends StatefulWidget {\n"
+        "  State createState() => _S();\n"
+        "}\nclass _S extends State {\n"
+        "  void add() { setState(() {}); }\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    result = check_interactive_home(tmp_path)
+    assert result.status == CheckStatus.PASS

@@ -30,6 +30,13 @@ h1 { margin: 0.15rem 0 0; font-size: 1.8rem; letter-spacing: -0.04em; }
 .ticker.ok { color: var(--ok); }
 .ticker.fail { color: var(--bad); }
 .cost { font-family: var(--mono); color: var(--wait); margin: 0; }
+.steps {
+  display: flex; gap: 0.4rem; list-style: none; padding: 0; margin: 0.75rem 0 0;
+  font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+.steps li { padding: 0.15rem 0.55rem; border-radius: 999px; border: 1px solid var(--line); }
+.steps li.on { color: var(--ink); border-color: var(--accent); }
+.badge.draft { background: #3d2e14; color: var(--wait); }
 .composer { margin: 1rem 0 1.5rem; }
 textarea, select, input, button {
   font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line);

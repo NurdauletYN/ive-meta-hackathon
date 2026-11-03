@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'app/strings.dart';
 import 'app/theme_loader.dart';
 import 'core/router/app_router.dart';
 
@@ -20,7 +21,7 @@ class RocketCapsuleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Rocket Capsule',
+      title: AppStrings.appName,
       theme: theme,
       routerConfig: router,
     );
