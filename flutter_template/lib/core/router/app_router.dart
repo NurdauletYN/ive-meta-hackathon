@@ -10,6 +10,7 @@ import '../onboarding/onboarding_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../settings/settings_screen.dart';
 import '../../app/features/home/home_screen.dart';
+import '../../app/features/registry.dart';
 
 class AppRouter {
   AppRouter({AuthService? auth, BillingService? billing})
@@ -33,6 +34,12 @@ class AppRouter {
       ),
       GoRoute(path: '/terms', builder: (context, state) => const TermsScreen()),
       GoRoute(path: '/privacy', builder: (context, state) => const PrivacyScreen()),
+      ...extraFeatureRoutes().map(
+        (feature) => GoRoute(
+          path: feature.path,
+          builder: (context, state) => feature.builder(context),
+        ),
+      ),
     ],
   );
 }

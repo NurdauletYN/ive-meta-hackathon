@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../strings.dart';
+import '../registry.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final extras = extraFeatureRoutes();
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.homeTitle)),
       body: Center(
@@ -24,6 +26,11 @@ class HomeScreen extends StatelessWidget {
               onPressed: () => context.push('/settings'),
               child: const Text(AppStrings.settingsTitle),
             ),
+            for (final feature in extras)
+              TextButton(
+                onPressed: () => context.push(feature.path),
+                child: Text(feature.label),
+              ),
           ],
         ),
       ),
