@@ -26,8 +26,8 @@ class MetaSettings:
     base_url: str = DEFAULT_BASE_URL
     text_model: str = DEFAULT_TEXT_MODEL
     image_model: str = DEFAULT_IMAGE_MODEL
-    timeout_s: float = 180.0
-    max_retries: int = 4
+    timeout_s: float = 90.0
+    max_retries: int = 2
     usage_log: Path | None = None
 
     def __post_init__(self) -> None:
@@ -57,11 +57,15 @@ class MetaSettings:
                 "META_API_KEY is not set. Copy .env.example to .env and put your key in it."
             )
         usage_log_raw = env.get("META_USAGE_LOG", "").strip()
+        timeout_raw = env.get("META_TIMEOUT_S", "").strip()
+        retries_raw = env.get("META_MAX_RETRIES", "").strip()
         return cls(
             api_key=api_key,
             base_url=env.get("META_BASE_URL", DEFAULT_BASE_URL).strip().rstrip("/"),
             text_model=env.get("META_MODEL_TEXT", DEFAULT_TEXT_MODEL).strip(),
             image_model=env.get("META_MODEL_IMAGE", DEFAULT_IMAGE_MODEL).strip(),
+            timeout_s=float(timeout_raw) if timeout_raw else 90.0,
+            max_retries=int(retries_raw) if retries_raw else 2,
             usage_log=Path(usage_log_raw) if usage_log_raw else None,
         )
 

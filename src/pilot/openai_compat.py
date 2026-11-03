@@ -28,7 +28,7 @@ class OpenAICompatPilot:
         base_url: str,
         model: str,
         api_key: str,
-        timeout_s: float = 180.0,
+        timeout_s: float = 90.0,
         transport: httpx.BaseTransport | None = None,
     ) -> None:
         if not api_key.strip():

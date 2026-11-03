@@ -94,6 +94,8 @@ def test_settings_default_models_are_standard_mode() -> None:
     s = MetaSettings.from_env({"META_API_KEY": "k"})
     assert s.text_model == "muse-spark-1.3"
     assert s.image_model == "muse-image-1.0"
+    assert s.timeout_s == 90.0
+    assert s.max_retries == 2
     assert not s.text_model.endswith("-contributor")
 
 
@@ -259,6 +261,12 @@ def test_text_cost_uses_cached_rate_for_cached_tokens() -> None:
 
 def test_unknown_model_has_no_guessed_price() -> None:
     assert text_cost_usd("some-future-model", input_tokens=10, cached_tokens=0, output_tokens=10) is None
+
+
+def test_open_model_has_baseten_list_price() -> None:
+    a = text_cost_usd("muse-spark-1.3", input_tokens=1000, cached_tokens=0, output_tokens=200)
+    b = text_cost_usd("meta-models/muse-spark-open-1026", input_tokens=1000, cached_tokens=0, output_tokens=200)
+    assert a is not None and a == b
 
 
 # ---------- Muse Spark ----------
