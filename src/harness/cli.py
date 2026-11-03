@@ -16,6 +16,7 @@ from harness.build import run_build
 from harness.design import pick_direction, run_design
 from harness.gate import gate_json, run_gate
 from harness.serve import serve
+from harness.ui import serve_ui
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -40,6 +41,7 @@ def main(argv: list[str] | None = None) -> None:
     design.add_argument("--pilot", default="muse")
     design.add_argument("--out", type=Path)
     design.add_argument("--max-usd", type=float, default=None)
+    design.add_argument("--skip-web", action="store_true", help="Copy capsule and apply tokens without flutter build web")
 
     build = sub.add_parser("build", help="Spec + file ops + gate/repair")
     build.add_argument("idea")
@@ -51,6 +53,9 @@ def main(argv: list[str] | None = None) -> None:
     srv = sub.add_parser("serve", help="Serve a design-run directory")
     srv.add_argument("run_dir", type=Path)
     srv.add_argument("--port", type=int, default=8765)
+
+    ui = sub.add_parser("ui", help="Local dashboard to run design/build/gate")
+    ui.add_argument("--port", type=int, default=8765)
 
     args = parser.parse_args(argv)
     try:
@@ -70,6 +75,10 @@ def _dispatch(args: argparse.Namespace) -> None:
         serve(args.run_dir.resolve(), port=args.port)
         return
 
+    if args.command == "ui":
+        serve_ui(ROOT, port=args.port)
+        return
+
     if args.command == "design":
         if args.idea_or_pick == "pick":
             if len(args.rest) < 2:
@@ -82,7 +91,10 @@ def _dispatch(args: argparse.Namespace) -> None:
         out = args.out or ROOT / "runs" / "design"
         run_id = out.name
         session = _session(args.pilot, run_id, args.max_usd)
-        result = run_design(idea, session, capsule=ROOT / "flutter_template", out_dir=out)
+        skip = (lambda _p: (True, "skipped")) if args.skip_web else None
+        result = run_design(
+            idea, session, capsule=ROOT / "flutter_template", out_dir=out, build_fn=skip
+        )
         print(json.dumps({k: v for k, v in result.items() if k != "directions"}, indent=2, default=str))
         print(json.dumps({"directions": [d["name"] for d in result["directions"]]}, indent=2))
         return
