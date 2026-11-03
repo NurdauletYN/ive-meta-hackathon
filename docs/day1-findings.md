@@ -1,6 +1,8 @@
 # Day 1 findings
 
-Run date: 2026-10-30. Models: `muse-spark-1.3`, `sam-3.1`, `muse-image-1.0` (Standard mode).
+> **Update (2026-11-03):** Sketch / SAM input was removed from the product. SAM remains documented here as a **negative finding** only.
+
+Run date: 2026-10-30. Models tested: `muse-spark-1.3`, `sam-3.1` (since removed), `muse-image-1.0`.
 Raw outputs: `ivebench/results/day1/`. Per-call usage (tokens, latency, cost): `ivebench/results/usage.jsonl`.
 
 ## Results
