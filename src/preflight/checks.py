@@ -1,4 +1,9 @@
-"""Individual preflight checks (deterministic, file/line evidence)."""
+"""Individual preflight checks (deterministic, file/line evidence).
+
+Checks search all of `lib/**` so a blank (bare) project can pass without copying
+capsule path names. Settings-like and paywall-like files are detected by filename
+or content, not by `lib/core/...`.
+"""
 
 from __future__ import annotations
 
@@ -8,14 +13,17 @@ from pathlib import Path
 
 from .types import CheckResult, CheckStatus
 
-PrivacyTermsCtx = tuple[Path, str]
+DartFile = tuple[Path, str]
 
 
-def _read(project: Path, rel: str) -> PrivacyTermsCtx | None:
-    path = project / rel
-    if not path.is_file():
-        return None
-    return path, path.read_text(encoding="utf-8", errors="replace")
+def _lib_dart(project: Path) -> list[DartFile]:
+    lib = project / "lib"
+    if not lib.is_dir():
+        return []
+    out: list[DartFile] = []
+    for path in sorted(lib.rglob("*.dart")):
+        out.append((path, path.read_text(encoding="utf-8", errors="replace")))
+    return out
 
 
 def _line_of(text: str, needle: str) -> int | None:
@@ -25,69 +33,173 @@ def _line_of(text: str, needle: str) -> int | None:
     return None
 
 
+def _rel(project: Path, path: Path) -> str:
+    return str(path.relative_to(project))
+
+
+def _is_settings_like(path: Path, text: str) -> bool:
+    if "settings" in path.name.lower():
+        return True
+    if "router" in path.name.lower() or "service" in path.name.lower():
+        return False
+    return "settingsTitle" in text or "deleteAccountLabel" in text or "restoreLabel" in text
+
+
+def _is_paywall_like(path: Path, text: str) -> bool:
+    if "paywall" in path.name.lower():
+        return True
+    if "router" in path.name.lower():
+        return False
+    lowered = text.lower()
+    return (
+        "SubscriptionDisclosure" in text
+        or "subscribeLabel" in text
+        or ("subscribe" in lowered and "purchase" in lowered)
+    )
+
+
+def _group(files: list[DartFile], pred) -> list[DartFile]:
+    return [item for item in files if pred(*item)]
+
+
+def _has_route_or_word(text: str, route: str, word: str) -> bool:
+    return route in text and word.lower() in text.lower()
+
+
 def check_privacy_links(project: Path) -> CheckResult:
     check_id = "privacy_link"
-    for rel in ("lib/core/settings/settings_screen.dart", "lib/core/paywall/paywall_screen.dart"):
-        ctx = _read(project, rel)
-        if ctx is None:
-            return CheckResult(check_id, CheckStatus.FAIL, f"missing {rel}", rel, 1)
-        path, text = ctx
-        if "privacy" not in text.lower() or "/privacy" not in text:
-            return CheckResult(check_id, CheckStatus.FAIL, "privacy route/link not found", str(path.relative_to(project)), 1)
+    files = _lib_dart(project)
+    if not files:
+        return CheckResult(check_id, CheckStatus.FAIL, "lib/ missing", "lib", 1)
+    settings = _group(files, _is_settings_like)
+    paywall = _group(files, _is_paywall_like)
+    if not settings:
+        return CheckResult(check_id, CheckStatus.FAIL, "no settings-like Dart file under lib/", "lib", 1)
+    if not paywall:
+        return CheckResult(check_id, CheckStatus.FAIL, "no paywall-like Dart file under lib/", "lib", 1)
+    settings_hit = next((p for p, t in settings if _has_route_or_word(t, "/privacy", "privacy")), None)
+    paywall_hit = next((p for p, t in paywall if _has_route_or_word(t, "/privacy", "privacy")), None)
+    if settings_hit is None or paywall_hit is None:
+        missing = "settings" if settings_hit is None else "paywall"
+        sample = settings[0][0] if settings_hit is None else paywall[0][0]
+        return CheckResult(
+            check_id,
+            CheckStatus.FAIL,
+            f"privacy route/link not found on a {missing} screen",
+            _rel(project, sample),
+            1,
+        )
     return CheckResult(check_id, CheckStatus.PASS, "privacy link present in settings and paywall")
 
 
 def check_terms_links(project: Path) -> CheckResult:
     check_id = "terms_link"
-    for rel in ("lib/core/settings/settings_screen.dart", "lib/core/paywall/paywall_screen.dart"):
-        ctx = _read(project, rel)
-        if ctx is None:
-            return CheckResult(check_id, CheckStatus.FAIL, f"missing {rel}", rel, 1)
-        path, text = ctx
-        if "terms" not in text.lower() or "/terms" not in text:
-            return CheckResult(check_id, CheckStatus.FAIL, "terms route/link not found", str(path.relative_to(project)), 1)
+    files = _lib_dart(project)
+    if not files:
+        return CheckResult(check_id, CheckStatus.FAIL, "lib/ missing", "lib", 1)
+    settings = _group(files, _is_settings_like)
+    paywall = _group(files, _is_paywall_like)
+    if not settings:
+        return CheckResult(check_id, CheckStatus.FAIL, "no settings-like Dart file under lib/", "lib", 1)
+    if not paywall:
+        return CheckResult(check_id, CheckStatus.FAIL, "no paywall-like Dart file under lib/", "lib", 1)
+    settings_hit = next((p for p, t in settings if _has_route_or_word(t, "/terms", "terms")), None)
+    paywall_hit = next((p for p, t in paywall if _has_route_or_word(t, "/terms", "terms")), None)
+    if settings_hit is None or paywall_hit is None:
+        missing = "settings" if settings_hit is None else "paywall"
+        sample = settings[0][0] if settings_hit is None else paywall[0][0]
+        return CheckResult(
+            check_id,
+            CheckStatus.FAIL,
+            f"terms route/link not found on a {missing} screen",
+            _rel(project, sample),
+            1,
+        )
     return CheckResult(check_id, CheckStatus.PASS, "terms link present in settings and paywall")
+
+
+_CALL_DELETE = re.compile(r"\.\s*deleteAccount\s*\(")
+_CALL_RESTORE = re.compile(r"\.\s*restorePurchases\s*\(")
 
 
 def check_account_deletion(project: Path) -> CheckResult:
     check_id = "account_deletion"
-    rel = "lib/core/settings/settings_screen.dart"
-    ctx = _read(project, rel)
-    if ctx is None:
-        return CheckResult(check_id, CheckStatus.FAIL, f"missing {rel}", rel, 1)
-    path, text = ctx
-    if "deleteAccount" not in text and "Delete account" not in text:
-        return CheckResult(check_id, CheckStatus.FAIL, "delete account control not found", str(path.relative_to(project)), 1)
-    line = _line_of(text, "Delete account") or _line_of(text, "deleteAccount")
-    return CheckResult(check_id, CheckStatus.PASS, "account deletion reachable from settings", str(path.relative_to(project)), line)
+    files = _lib_dart(project)
+    if not files:
+        return CheckResult(check_id, CheckStatus.FAIL, "lib/ missing", "lib", 1)
+    for path, text in files:
+        if "service" in path.name.lower():
+            continue
+        if "Delete account" in text or _CALL_DELETE.search(text):
+            line = _line_of(text, "Delete account") or _line_of(text, "deleteAccount")
+            return CheckResult(
+                check_id,
+                CheckStatus.PASS,
+                "account deletion reachable from the app",
+                _rel(project, path),
+                line,
+            )
+    return CheckResult(check_id, CheckStatus.FAIL, "delete account control not found under lib/", "lib", 1)
 
 
 def check_restore_purchases(project: Path) -> CheckResult:
     check_id = "restore_purchases"
-    rel = "lib/core/settings/settings_screen.dart"
-    ctx = _read(project, rel)
-    if ctx is None:
-        return CheckResult(check_id, CheckStatus.FAIL, f"missing {rel}", rel, 1)
-    path, text = ctx
-    if "restorePurchases" not in text and "Restore purchases" not in text:
-        return CheckResult(check_id, CheckStatus.FAIL, "restore purchases control not found", str(path.relative_to(project)), 1)
-    line = _line_of(text, "Restore purchases") or _line_of(text, "restorePurchases")
-    return CheckResult(check_id, CheckStatus.PASS, "restore purchases control present", str(path.relative_to(project)), line)
+    files = _lib_dart(project)
+    if not files:
+        return CheckResult(check_id, CheckStatus.FAIL, "lib/ missing", "lib", 1)
+    for path, text in files:
+        if "service" in path.name.lower():
+            continue
+        if "Restore purchases" in text or _CALL_RESTORE.search(text):
+            line = _line_of(text, "Restore purchases") or _line_of(text, "restorePurchases")
+            return CheckResult(
+                check_id,
+                CheckStatus.PASS,
+                "restore purchases control present",
+                _rel(project, path),
+                line,
+            )
+    return CheckResult(check_id, CheckStatus.FAIL, "restore purchases control not found under lib/", "lib", 1)
+
+
+_DISCLOSURE_HINTS = (
+    "SubscriptionDisclosure",
+    "auto-renew",
+    "auto renew",
+    "automatically renew",
+    "cancel anytime",
+    "cancel at any time",
+)
+_PURCHASE_HINTS = ("Subscribe", "Purchase", "subscribeLabel")
 
 
 def check_subscription_disclosure(project: Path) -> CheckResult:
     check_id = "subscription_disclosure"
-    rel = "lib/core/paywall/paywall_screen.dart"
-    ctx = _read(project, rel)
-    if ctx is None:
-        return CheckResult(check_id, CheckStatus.FAIL, f"missing {rel}", rel, 1)
-    path, text = ctx
-    if "SubscriptionDisclosure" not in text:
-        return CheckResult(check_id, CheckStatus.FAIL, "SubscriptionDisclosure widget not used on paywall", str(path.relative_to(project)), 1)
-    if not any(token in text for token in ("Subscribe", "Purchase", "subscribeLabel")):
-        return CheckResult(check_id, CheckStatus.FAIL, "purchase CTA not found near disclosure", str(path.relative_to(project)), 1)
-    line = _line_of(text, "SubscriptionDisclosure")
-    return CheckResult(check_id, CheckStatus.PASS, "subscription disclosure beside purchase CTA", str(path.relative_to(project)), line)
+    files = _lib_dart(project)
+    paywall = _group(files, _is_paywall_like)
+    if not paywall:
+        return CheckResult(check_id, CheckStatus.FAIL, "no paywall-like Dart file under lib/", "lib", 1)
+    for path, text in paywall:
+        lowered = text.lower()
+        has_disclosure = any(hint.lower() in lowered or hint in text for hint in _DISCLOSURE_HINTS)
+        has_cta = any(token in text for token in _PURCHASE_HINTS)
+        if has_disclosure and has_cta:
+            line = _line_of(text, "SubscriptionDisclosure") or _line_of(text.lower(), "auto-renew") or 1
+            return CheckResult(
+                check_id,
+                CheckStatus.PASS,
+                "subscription disclosure beside purchase CTA",
+                _rel(project, path),
+                line,
+            )
+    sample = paywall[0][0]
+    return CheckResult(
+        check_id,
+        CheckStatus.FAIL,
+        "paywall missing disclosure (auto-renew/cancel) next to a purchase CTA",
+        _rel(project, sample),
+        1,
+    )
 
 
 PLACEHOLDER_PATTERNS = (
@@ -144,12 +256,20 @@ def contrast_ratio(fg: str, bg: str) -> float:
     return (lighter + 0.05) / (darker + 0.05)
 
 
+def _find_tokens_file(project: Path) -> Path | None:
+    lib = project / "lib"
+    if not lib.is_dir():
+        return None
+    matches = sorted(lib.rglob("design_tokens.json"))
+    return matches[0] if matches else None
+
+
 def check_wcag_contrast(project: Path) -> CheckResult:
     check_id = "wcag_contrast"
-    rel = "lib/app/design_tokens.json"
-    path = project / rel
-    if not path.is_file():
-        return CheckResult(check_id, CheckStatus.FAIL, "design_tokens.json missing", rel, 1)
+    path = _find_tokens_file(project)
+    if path is None:
+        return CheckResult(check_id, CheckStatus.FAIL, "design_tokens.json missing under lib/", "lib", 1)
+    rel = _rel(project, path)
     data = json.loads(path.read_text(encoding="utf-8"))
     pairs = data.get("contrast_pairs") or []
     if not pairs:
