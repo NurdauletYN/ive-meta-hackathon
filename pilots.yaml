@@ -1,0 +1,10 @@
+# Pilot backends. Keys are --pilot names. No secrets here.
+muse:
+  type: muse_spark
+fake:
+  type: fake
+baseten:
+  type: openai_compat
+  base_url_env: OPENAI_COMPAT_BASE_URL
+  api_key_env: OPENAI_COMPAT_API_KEY
+  model: meta-models/muse-spark-open-1026
