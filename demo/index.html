@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rocket harness</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <p class="kicker">ive-meta-hackathon · new this week</p>
+      <h1>Rocket harness</h1>
+      <p class="lede">
+        Locked Flutter capsule, file-op guard, store preflight. Any Pilot proposes directions
+        or emits file ops. This page is a local tester — not the Ive product.
+      </p>
+    </header>
+
+    <main class="grid">
+      <form id="form" class="panel">
+        <label>
+          Idea
+          <textarea id="idea" rows="3" required placeholder="What should the app do?"></textarea>
+        </label>
+        <div class="chips" id="ideas" aria-label="Eval ideas"></div>
+        <div class="row">
+          <label>
+            Job
+            <select id="kind">
+              <option value="design">design — 3 token directions</option>
+              <option value="build">build — spec + file ops + gate</option>
+              <option value="gate">gate — analyze / optional web / preflight</option>
+            </select>
+          </label>
+          <label>
+            Pilot
+            <select id="pilot">
+              <option value="fake">fake (offline canned)</option>
+              <option value="muse">muse (Meta API, spend)</option>
+              <option value="baseten">baseten (Spark Open, spend)</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <label>
+            Mode
+            <select id="mode">
+              <option value="harness">harness (capsule)</option>
+              <option value="bare">bare (blank flutter create)</option>
+            </select>
+          </label>
+          <label>
+            Run id
+            <input id="run_id" value="ui-demo" pattern="[A-Za-z0-9._-]{1,64}" />
+          </label>
+          <label>
+            Max USD
+            <input id="max_usd" type="number" min="0" step="0.1" value="3" />
+          </label>
+        </div>
+        <label class="check">
+          <input id="build_web" type="checkbox" />
+          Also run <code>flutter build web</code> (slow)
+        </label>
+        <div class="actions">
+          <button type="submit" id="go">Run</button>
+          <p id="hint">Fake first. Muse only with a cap.</p>
+        </div>
+      </form>
+
+      <section class="panel">
+        <h2>Job</h2>
+        <p id="status" class="status idle">idle</p>
+        <pre id="out" class="out">No job yet.</pre>
+        <p id="links"></p>
+      </section>
+    </main>
+
+    <section class="panel runs-panel">
+      <h2>Runs on disk</h2>
+      <ul id="runs"></ul>
+    </section>
+
+    <footer>
+      Auth and billing in the capsule are in-memory mocks. Preflight is an engineering signal,
+      not legal advice. Numbers come from <code>ivebench/results/usage.jsonl</code>.
+    </footer>
+    <script src="/app.js"></script>
+  </body>
+</html>

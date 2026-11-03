@@ -16,6 +16,7 @@ pre-commit install                     # optional secret scan on commit
 cd flutter_template && flutter pub get && cd ..
 uv run harness gate flutter_template --build-web
 uv run pytest
+uv run harness ui --port 8765   # http://127.0.0.1:8765/  (fake pilot first)
 ```
 
 Offline Pilot loop (no API key): `FakePilot` is canned JSON for tests.

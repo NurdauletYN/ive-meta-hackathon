@@ -19,8 +19,9 @@ Track recommendation: **Indie Developer**. Problem statement: **Push the Frontie
 - [x] Shorter Meta timeouts (default 90s, 2 retries) so a stall cannot burn ~16 min.
 - [x] Tests for relocated layouts, open-model pricing, timeout env.
 
-## Phase 2 — live `design`
+## Phase 2 — live `design` + tester UI
 
+- [x] Local `harness ui` (demo/) so a human can run design/build/gate. Not the Ive product.
 - [ ] `harness design` one idea with Muse Spark, open `gallery.html`.
 - [ ] Playwright only if install is quick; otherwise skip.
 

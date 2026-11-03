@@ -1,5 +1,12 @@
-# demo
+# Local harness tester
 
-Not started. Planned for Day 3 (small FastAPI app and upload page). Scope and owner: see `HACKATHON_SCOPE.md`.
+A small dashboard, written this week, so you can drive **design / build / gate** without the private Ive product.
 
-No code yet. Nothing in this folder is a feature until its module row in `HACKATHON_SCOPE.md` says done.
+```bash
+uv run harness ui --port 8765
+# open http://127.0.0.1:8765/
+```
+
+Start with **Pilot = fake** (canned JSON, no API spend). Switch to **muse** only with a `--max-usd` cap. Flutter web builds are off unless you tick the box.
+
+Auth and billing in the capsule are in-memory mocks. Preflight is not legal advice.
