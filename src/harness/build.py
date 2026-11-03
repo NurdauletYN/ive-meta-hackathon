@@ -21,6 +21,7 @@ from .gate import GateReport, StepResult, run_gate
 from .guard import FileOp, validate_operations
 from preflight.types import CheckStatus
 
+from .branding import apply_branding
 from .prompts import BARE_REQUIREMENTS, CAPSULE_PREFIX
 from .skin import write_skin_from_project
 from .tokens import apply_tokens
@@ -270,6 +271,7 @@ def run_build(
         )
         (run_dir / "spec.json").write_text(spec.model_dump_json(indent=2) + "\n", encoding="utf-8")
         apply_spec_assets(project, spec)
+        apply_branding(project, spec)
         stages["spec_ms"] = round((time.perf_counter() - t0) * 1000, 1)
         session.emit("stage", name="spec", status="ok", app_name=spec.app_name, ms=stages["spec_ms"])
         items = [screen.id.replace("_", " ") for screen in spec.screens] or [slide.title for slide in spec.onboarding]
@@ -288,9 +290,12 @@ def run_build(
         t0 = time.perf_counter()
         build_user = (
             f"AppSpec:\n{spec.model_dump_json()}\n\n"
-            "Emit at most 3 file operations. Implement ONE list screen plus a registry write. "
-            "Each Dart file under 60 lines. Writes use content; find and replace must be JSON null. "
-            "Do not recreate auth, paywall, settings, terms, or privacy."
+            "Emit at most 3 file operations. Implement ONE StatefulWidget screen with in-memory "
+            "state: a list the user can add and remove, or a two-step form. Use setState. "
+            "Register it FIRST in extraFeatureRoutes() — that entry is the app home at /. "
+            "Keep the FeatureRoute class in registry.dart. Each Dart file under 80 lines. "
+            "Writes use content; find and replace must be JSON null. "
+            "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core."
         )
         ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)
         stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)

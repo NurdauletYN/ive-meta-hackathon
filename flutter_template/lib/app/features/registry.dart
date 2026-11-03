@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Extra screens the Pilot may add. Core router reads this list.
+/// Extra screens the Pilot may add. The first entry is the app home
+/// (`/` in lib/core/router/app_router.dart). Keep this file's FeatureRoute class.
 class FeatureRoute {
   const FeatureRoute({
     required this.path,

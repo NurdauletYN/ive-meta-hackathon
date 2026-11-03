@@ -14,6 +14,12 @@
       "author": "human harness",
       "date": "2026-11-03",
       "reason": "Reads extraFeatureRoutes() from lib/app/features/registry.dart so a Pilot can add screens without editing core."
+    },
+    {
+      "path": "lib/core/router/app_router.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "`/` uses extraFeatureRoutes().first so the generated feature is the home screen. Capsule HomeScreen is the fallback when the list is empty."
     }
   ]
 }

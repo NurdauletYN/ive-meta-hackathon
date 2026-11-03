@@ -15,5 +15,6 @@ Checks search **all of `lib/`**. They do not require capsule paths such as `lib/
 | `subscription_disclosure` | Auto-renew/cancel wording or `SubscriptionDisclosure` next to a purchase CTA on a paywall-like screen |
 | `no_placeholders` | No lorem ipsum, TODO, or default Flutter demo strings |
 | `wcag_contrast` | Pairs in any `lib/**/design_tokens.json` meet WCAG AA 4.5:1 |
+| `interactive_home` | **WARN** (not FAIL) if `extraFeatureRoutes()` has a screen with no `StatefulWidget` / `setState` |
 
 Fixtures under `tests/fixtures/preflight/` include a passing project and one failing tree per check. `test_relocated_layout_still_passes` moves those files off capsule paths and still expects PASS.

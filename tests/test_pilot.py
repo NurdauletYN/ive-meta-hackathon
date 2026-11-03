@@ -100,14 +100,24 @@ APP_SPEC = {
 
 NOTES_DART = """import 'package:flutter/material.dart';
 
-class NotesScreen extends StatelessWidget {
+class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
+  @override
+  State<NotesScreen> createState() => _NotesScreenState();
+}
 
+class _NotesScreenState extends State<NotesScreen> {
+  final items = <String>['Hammer'];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Notes')),
-      body: const Center(child: Text('No notes yet')),
+      body: ListView(
+        children: [
+          for (final item in items) ListTile(title: Text(item)),
+          TextButton(onPressed: () => setState(() => items.add('Saw')), child: const Text('Add')),
+        ],
+      ),
     );
   }
 }
@@ -348,6 +358,15 @@ def test_harness_mode_e2e_and_identical_prefix(tmp_path: Path) -> None:
     assert written["pilot"] == "fake"
     notes = tmp_path / "run" / "project" / "lib" / "app" / "features" / "notes" / "notes_screen.dart"
     assert notes.is_file()
+    assert "StatefulWidget" in notes.read_text(encoding="utf-8")
+    strings = (tmp_path / "run" / "project" / "lib" / "app" / "strings.dart").read_text(encoding="utf-8")
+    assert "Tool Library" in strings
+    assert "Rocket Capsule" not in strings
+    web_title = (tmp_path / "run" / "project" / "web" / "index.html").read_text(encoding="utf-8")
+    assert "<title>Tool Library</title>" in web_title
+    from harness.branding import visible_rocket_capsule
+
+    assert visible_rocket_capsule(tmp_path / "run" / "project") == []
     systems = [c[1] for c in fake.calls]
     assert systems[0] == CAPSULE_PREFIX
     assert systems[1] == CAPSULE_PREFIX
