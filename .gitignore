@@ -25,6 +25,9 @@ build/
 **/android/.gradle/
 **/web/build/
 
+# Generated Pilot runs (result JSON is printed in reports; trees are local)
+runs/
+
 # Local tooling caches (not benchmark results)
 .tools/
 .uv-cache/

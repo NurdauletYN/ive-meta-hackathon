@@ -1,0 +1,8 @@
+{"id": "tool_library", "title": "Neighborhood tool library", "blurb": "Neighbors list, borrow, and return household tools with due dates and a simple thank-you note."}
+{"id": "book_swap", "title": "Local book swap", "blurb": "Catalog paperbacks on a stoop shelf, request a swap, and mark a title as taken."}
+{"id": "chore_board", "title": "Household chore board", "blurb": "A shared list of chores, assignees, and weekly check-off for a household."}
+{"id": "packing_list", "title": "Trip packing lists", "blurb": "Reusable packing templates for weekend trips with checkboxes and notes per item."}
+{"id": "home_inventory", "title": "Home item inventory", "blurb": "Record serial numbers, rooms, and purchase dates for household electronics and furniture."}
+{"id": "flashcards", "title": "Language flashcards", "blurb": "Deck of prompt/answer cards with a simple know/don't-know review queue."}
+{"id": "plant_log", "title": "Houseplant care log", "blurb": "Track watering dates and notes for indoor plants on a windowsill."}
+{"id": "shift_signup", "title": "Volunteer shift signup", "blurb": "A community org posts shifts; volunteers claim a slot and see who else is coming."}

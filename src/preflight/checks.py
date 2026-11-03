@@ -137,7 +137,7 @@ def _relative_luminance(rgb: tuple[float, float, float]) -> float:
     return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
 
 
-def _contrast_ratio(fg: str, bg: str) -> float:
+def contrast_ratio(fg: str, bg: str) -> float:
     l1 = _relative_luminance(_hex_to_rgb(fg))
     l2 = _relative_luminance(_hex_to_rgb(bg))
     lighter, darker = max(l1, l2), min(l1, l2)
@@ -155,7 +155,7 @@ def check_wcag_contrast(project: Path) -> CheckResult:
     if not pairs:
         return CheckResult(check_id, CheckStatus.FAIL, "contrast_pairs empty", rel, 1)
     for pair in pairs:
-        ratio = _contrast_ratio(pair["foreground"], pair["background"])
+        ratio = contrast_ratio(pair["foreground"], pair["background"])
         if ratio < 4.5:
             return CheckResult(
                 check_id,

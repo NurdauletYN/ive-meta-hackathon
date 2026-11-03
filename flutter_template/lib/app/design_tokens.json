@@ -16,5 +16,7 @@
       "foreground": "#FFFFFF",
       "background": "#1565C0"
     }
-  ]
+  ],
+  "corner_radius": 12,
+  "typography": "default"
 }

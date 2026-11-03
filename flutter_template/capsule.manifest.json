@@ -4,6 +4,16 @@
   "onboarding_slots": ["hero_title", "hero_body"],
   "design_token_schema": {
     "colors": ["primary", "on_primary", "surface", "on_surface"],
-    "contrast_pairs": "foreground/background hex pairs checked for WCAG AA"
-  }
+    "contrast_pairs": "foreground/background hex pairs checked for WCAG AA",
+    "corner_radius": "number, dp",
+    "typography": ["default", "compact", "expressive"]
+  },
+  "core_changes": [
+    {
+      "path": "lib/core/router/app_router.dart",
+      "author": "human harness",
+      "date": "2026-11-03",
+      "reason": "Reads extraFeatureRoutes() from lib/app/features/registry.dart so a Pilot can add screens without editing core."
+    }
+  ]
 }

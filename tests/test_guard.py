@@ -58,3 +58,12 @@ def test_rejects_binary_and_oversize(tmp_path: Path) -> None:
 def test_delete_on_protected_path() -> None:
     violations = validate_operations(TEMPLATE, [{"op": "delete", "path": "lib/core/auth/auth_service.dart"}])
     assert any(v.code == "protected_path" for v in violations)
+
+
+def test_rejects_path_outside_build_allowlist() -> None:
+    violations = validate_operations(
+        TEMPLATE,
+        [{"op": "write", "path": "lib/app/theme_loader.dart", "content": "// no", "find": None, "replace": None}],
+        allowed_prefixes=["lib/app/features/**", "lib/app/strings.dart"],
+    )
+    assert any(v.code == "not_editable" for v in violations)
