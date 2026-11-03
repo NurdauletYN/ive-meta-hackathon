@@ -6,4 +6,9 @@
 | `results/usage.jsonl` | Append-only usage log (`run_id`, pilot, stage, tokens, cached_tokens, est. cost) |
 | `results/day1/` | Historical Day 1 API smokes |
 
-Full eval sweep (every idea × harness/bare) is not in this phase. Offline FakePilot coverage is `tests/test_pilot.py`.
+```bash
+uv run harness sweep --pilot muse --max-usd 3 --limit 8
+# writes ivebench/results/sweep/summary.json
+```
+
+Offline FakePilot coverage is `tests/test_pilot.py` and `tests/test_sweep.py`.

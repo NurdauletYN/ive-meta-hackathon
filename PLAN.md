@@ -21,13 +21,13 @@ Track recommendation: **Indie Developer**. Problem statement: **Push the Frontie
 
 ## Phase 2 — live `design` + tester UI
 
-- [x] Local `harness ui` studio: event stream, phone frames, 3-direction pick, harness vs bare compare.
+- [x] Local `harness ui` studio: phone-first, token skins, SSE, design pick, harness vs bare.
 - [x] `harness design` one idea with Muse Spark (`Porch Light` / `Community Shed` / `Good Neighbor`).
 - [ ] Playwright only if install is quick; otherwise skip.
 
 ## Phase 3 — sweep
 
-- [ ] 8 ideas × harness/bare on Muse Spark (`--max-usd` per run).
+- [ ] 8 ideas × harness/bare on Muse Spark (`uv run harness sweep --pilot muse --max-usd 3`).
 - [ ] Same on Baseten Muse Spark Open if keys exist. Cut Baseten at 15:00 if unfinished.
 - [ ] Commit raw `ivebench/results/` and a results table.
 

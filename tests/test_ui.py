@@ -32,6 +32,10 @@ def test_ui_design_job_with_fake(tmp_path: Path) -> None:
     assert app.job["status"] == "done", app.job
     assert app.job["summary"]["directions"] == ["Harbor", "Ember", "Grove"]
     assert (tmp_path / "runs" / "ui-d" / "gallery.html").is_file()
+    assert (tmp_path / "runs" / "ui-d" / "dir_2" / "skin.html").is_file()
+    skin = (tmp_path / "runs" / "ui-d" / "dir_2" / "skin.html").read_text(encoding="utf-8")
+    assert "#C62828" in skin
+    assert "Ember" in skin
 
 
 def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
@@ -50,6 +54,8 @@ def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
         page = httpx.get(f"{base}/", timeout=5)
         assert page.status_code == 200
         assert "Rocket studio" in page.text
+        assert 'id="ticker"' in page.text
+        assert "<summary>" in page.text
         started = httpx.post(
             f"{base}/api/design",
             json={"idea": "swap books", "pilot": "fake", "run_id": "http-d", "build_web": False},
@@ -79,6 +85,9 @@ def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
         assert not [j for j in job.get("jobs") or [] if j.get("status") == "running"], job
         gallery = httpx.get(f"{base}/runs/http-d/gallery.html", timeout=5)
         assert gallery.status_code == 200
+        skin = httpx.get(f"{base}/runs/http-d/dir_1/skin.html", timeout=5)
+        assert skin.status_code == 200
+        assert "Harbor" in skin.text
         deny = httpx.get(f"{base}/runs/../.env", timeout=5)
         assert deny.status_code == 404
         page = httpx.get(f"{base}/", timeout=5)
@@ -153,3 +162,33 @@ def test_normalize_base_href() -> None:
 
     assert normalize_base_href("runs/x/project/build/web") == "/runs/x/project/build/web/"
     assert normalize_base_href("/already/") == "/already/"
+
+
+def test_skin_escapes_html(tmp_path: Path) -> None:
+    from harness.skin import write_skin
+
+    path = write_skin(
+        tmp_path / "skin.html",
+        title="<script>x</script>",
+        app_name="Tools",
+        idea="borrow & return",
+        primary="#C62828",
+        items=["Hammer"],
+        cta="Open",
+    )
+    text = path.read_text(encoding="utf-8")
+    assert "<script>x</script>" not in text
+    assert "&lt;script&gt;x&lt;/script&gt;" in text
+    assert "#C62828" in text
+    assert "Hammer" in text
+
+
+def test_event_hub_does_not_replay() -> None:
+    from harness.events import EventHub
+
+    hub = EventHub()
+    hub.publish({"type": "old", "run_id": "past"})
+    queue = hub.subscribe()
+    assert queue.empty()
+    hub.publish({"type": "live", "run_id": "now"})
+    assert queue.get_nowait()["type"] == "live"

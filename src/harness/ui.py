@@ -181,7 +181,11 @@ class HarnessUI:
                             "index": i,
                             "name": d["name"],
                             "primary": d["tokens"]["colors"]["primary"],
-                            "url": f"/runs/{run_id}/dir_{i}/build/web/" if build_web else None,
+                            "url": (
+                                f"/runs/{run_id}/dir_{i}/build/web/"
+                                if build_web
+                                else f"/runs/{run_id}/dir_{i}/skin.html"
+                            ),
                         }
                         for i, d in enumerate(result["directions"], start=1)
                     ],
@@ -211,7 +215,11 @@ class HarnessUI:
                     "mode": mode,
                     "repair_rounds": result.get("repair_rounds"),
                     "tokens": result.get("tokens"),
-                    "preview": href if build_web and result.get("ok") else None,
+                    "preview": (
+                        href
+                        if build_web and result.get("ok")
+                        else f"/runs/{run_id}/project/skin.html"
+                    ),
                     "gate_steps": [
                         {"name": s.get("name"), "ok": s.get("ok")} for s in (gate.get("steps") or [])
                     ],

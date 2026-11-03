@@ -12,6 +12,7 @@ from pilot.session import PilotSession
 
 from .copy_project import copy_tree
 from .diversity import contrast_errors, diversity_errors
+from .skin import write_skin
 from .tokens import apply_tokens
 from .web_build import flutter_web_build
 
@@ -104,7 +105,7 @@ def run_design(
 ) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     prefix = public_prefix or f"/runs/{out_dir.name}/"
-    session.emit("stage", name="design", status="start")
+    session.emit("stage", name="design", status="start", slots=3)
     directions = request_directions(session, idea)
     contrast_issues = [err for d in directions for err in contrast_errors(d)]
     if contrast_issues:
@@ -126,22 +127,50 @@ def run_design(
         dest = out_dir / f"dir_{index}"
         copy_tree(capsule, dest)
         apply_tokens(dest, direction)
+        colors = direction.tokens.colors
+        write_skin(
+            dest / "skin.html",
+            title=direction.name,
+            app_name=direction.name,
+            idea=idea,
+            primary=colors.primary,
+            on_primary=colors.on_primary,
+            surface=colors.surface,
+            on_surface=colors.on_surface,
+            radius=direction.tokens.corner_radius,
+            typography=direction.tokens.typography,
+            items=["Today", "Saved", "Activity"],
+            cta="Open",
+        )
+        skin = f"{prefix}dir_{index}/skin.html"
         href = f"{prefix}dir_{index}/build/web/"
-        skipped = build_fn is not None
-        if skipped:
-            ok, log = build_fn(dest)
-        else:
-            ok, log = _flutter_web_build(dest, href)
-        preview = None if skipped or not ok else href
         session.emit(
             "direction",
             index=index,
             name=direction.name,
-            primary=direction.tokens.colors.primary,
-            preview=preview,
-            ok=ok,
+            primary=colors.primary,
+            preview=skin,
+            kind="skin",
+            ok=True,
         )
-        return {"dir": dest.name, "ok": ok, "log_tail": log[-500:], "preview": preview, "index": index}
+        skipped = build_fn is not None
+        if skipped:
+            ok, log = build_fn(dest)
+            preview = skin
+        else:
+            ok, log = _flutter_web_build(dest, href)
+            preview = href if ok else skin
+            if ok:
+                session.emit(
+                    "direction",
+                    index=index,
+                    name=direction.name,
+                    primary=colors.primary,
+                    preview=preview,
+                    kind="web",
+                    ok=True,
+                )
+        return {"dir": dest.name, "ok": ok, "log_tail": log[-500:], "preview": preview, "index": index, "skin": skin}
 
     builds: list[dict] = [{}] * len(directions)
     with ThreadPoolExecutor(max_workers=3) as pool:
