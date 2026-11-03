@@ -22,7 +22,7 @@ Track recommendation: **Indie Developer**. Problem statement: **Push the Frontie
 ## Phase 2 — live `design` + tester UI
 
 - [x] Local `harness ui` (demo/) so a human can run design/build/gate. Not the Ive product.
-- [ ] `harness design` one idea with Muse Spark, open `gallery.html`.
+- [x] `harness design` one idea with Muse Spark (`Porch Light` / `Community Shed` / `Good Neighbor`). Flutter web skipped; gallery HTML written.
 - [ ] Playwright only if install is quick; otherwise skip.
 
 ## Phase 3 — sweep
