@@ -61,7 +61,28 @@ def _is_protected(rel_path: str, patterns: list[str]) -> bool:
     return False
 
 
-def validate_operations(project_dir: Path, operations: list[dict[str, Any]]) -> list[GuardViolation]:
+def _is_allowed(rel_path: str, prefixes: list[str] | None) -> bool:
+    if prefixes is None:
+        return True
+    normalized = rel_path.replace("\\", "/")
+    for prefix in prefixes:
+        if prefix.endswith("/**"):
+            if normalized.startswith(prefix[:-3]) or fnmatch.fnmatch(normalized, prefix):
+                return True
+        elif prefix.endswith("/"):
+            if normalized.startswith(prefix) or normalized == prefix[:-1]:
+                return True
+        elif fnmatch.fnmatch(normalized, prefix) or normalized == prefix or normalized.startswith(prefix + "/"):
+            return True
+    return False
+
+
+def validate_operations(
+    project_dir: Path,
+    operations: list[dict[str, Any]],
+    *,
+    allowed_prefixes: list[str] | None = None,
+) -> list[GuardViolation]:
     manifest = load_manifest(project_dir)
     protected = list(manifest.get("protected_paths") or [])
     violations: list[GuardViolation] = []
@@ -76,6 +97,10 @@ def validate_operations(project_dir: Path, operations: list[dict[str, Any]]) -> 
         if _is_protected(op.path, protected):
             violations.append(
                 GuardViolation("protected_path", f"cannot modify protected path {op.path!r}", op.path)
+            )
+        elif not _is_allowed(op.path, allowed_prefixes):
+            violations.append(
+                GuardViolation("not_editable", f"path {op.path!r} is outside the allowed prefixes", op.path)
             )
 
         if op.op == "write" and op.content is not None:
