@@ -17,7 +17,7 @@ cd flutter_template && flutter pub get && cd ..
 uv run harness gate flutter_template --build-web
 uv run pytest
 uv run harness ui --port 8765   # http://127.0.0.1:8765/  phone-first studio; fake first
-uv run harness sweep --pilot muse --max-usd 3   # ivebench/results/sweep/
+uv run harness sweep --pilots muse,baseten --max-usd 8 --max-usd-per-pilot 4
 ```
 
 Offline Pilot loop (no API key): `FakePilot` is canned JSON for tests.

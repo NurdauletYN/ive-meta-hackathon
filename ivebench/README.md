@@ -7,8 +7,9 @@
 | `results/day1/` | Historical Day 1 API smokes |
 
 ```bash
-uv run harness sweep --pilot muse --max-usd 3 --limit 8
-# writes ivebench/results/sweep/summary.json
+uv run harness sweep --pilots muse,baseten --max-usd 8 --max-usd-per-pilot 4
+# writes ivebench/results/sweep/*.json and runs/sweep.log
+# refuses a dirty git tree; skips completed run ids; retries infra_fail once
 ```
 
 Offline FakePilot coverage is `tests/test_pilot.py` and `tests/test_sweep.py`.
