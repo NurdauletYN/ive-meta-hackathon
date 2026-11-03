@@ -18,7 +18,6 @@ from .errors import MetaConfigError
 DEFAULT_BASE_URL = "https://api.meta.ai/v1"
 DEFAULT_TEXT_MODEL = "muse-spark-1.3"
 DEFAULT_IMAGE_MODEL = "muse-image-1.0"
-DEFAULT_SEGMENT_MODEL = "sam-3.1"
 
 
 @dataclass(frozen=True)
@@ -27,7 +26,6 @@ class MetaSettings:
     base_url: str = DEFAULT_BASE_URL
     text_model: str = DEFAULT_TEXT_MODEL
     image_model: str = DEFAULT_IMAGE_MODEL
-    segment_model: str = DEFAULT_SEGMENT_MODEL
     timeout_s: float = 180.0
     max_retries: int = 4
     usage_log: Path | None = None
@@ -40,7 +38,6 @@ class MetaSettings:
         for label, model in (
             ("META_MODEL_TEXT", self.text_model),
             ("META_MODEL_IMAGE", self.image_model),
-            ("META_MODEL_SEGMENT", self.segment_model),
         ):
             if model.endswith("-contributor"):
                 raise MetaConfigError(
@@ -65,7 +62,6 @@ class MetaSettings:
             base_url=env.get("META_BASE_URL", DEFAULT_BASE_URL).strip().rstrip("/"),
             text_model=env.get("META_MODEL_TEXT", DEFAULT_TEXT_MODEL).strip(),
             image_model=env.get("META_MODEL_IMAGE", DEFAULT_IMAGE_MODEL).strip(),
-            segment_model=env.get("META_MODEL_SEGMENT", DEFAULT_SEGMENT_MODEL).strip(),
             usage_log=Path(usage_log_raw) if usage_log_raw else None,
         )
 

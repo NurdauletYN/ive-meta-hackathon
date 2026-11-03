@@ -23,7 +23,6 @@ from meta_client import (
     MetaRequestError,
     MetaResponseError,
     MetaRetryExhaustedError,
-    MetaSam,
     MetaSettings,
     MuseImage,
     MuseSpark,
@@ -31,15 +30,6 @@ from meta_client import (
     image_input_from_bytes,
 )
 from meta_client.pricing import text_cost_usd
-from meta_client.segmentation import validate_concept
-
-# Real grammar example from https://dev.meta.ai/docs/sam/reading-segmentation (video frame 0, two objects).
-SAM_LINE = (
-    "<0f>0<|box;x1=211;y1=228;x2=270;y2=254;w=320;h=334|>"
-    "<|mask;x=0;y=0;data=27,60,~!!!!M!0c[0o91w?q1!pIH4pPRVp2B3'7`e.ioeAf6-k/#Xd8%dX9x(|>"
-    ",1<|box;x1=155;y1=228;x2=202;y2=254;w=320;h=334|>"
-    "<|mask;x=0;y=0;data=27,48,~!!!!J!0c[q=Pj_zs=*4C4(/./x#:/`S_GnD`=o3?X{emCgO$y@|>"
-)
 
 
 def _settings(**overrides: Any) -> MetaSettings:
@@ -104,7 +94,6 @@ def test_settings_default_models_are_standard_mode() -> None:
     s = MetaSettings.from_env({"META_API_KEY": "k"})
     assert s.text_model == "muse-spark-1.3"
     assert s.image_model == "muse-image-1.0"
-    assert s.segment_model == "sam-3.1"
     assert not s.text_model.endswith("-contributor")
 
 
@@ -397,72 +386,9 @@ def test_image_generate_validates_inputs_before_network(kwargs: dict[str, Any], 
         MuseImage(_client(handler)).generate("an icon", **kwargs)
 
 
-# ---------- SAM 3.1 ----------
+def test_resize_lanczos_produces_exact_square_png() -> None:
+    from meta_client.images import resize_lanczos_to_square
 
-
-def _sam_response(text: str) -> dict[str, Any]:
-    return {
-        "id": "resp_sam",
-        "status": "completed",
-        "output": [{"type": "message", "content": [{"type": "output_text", "text": text}]}],
-    }
-
-
-def test_sam_parses_two_objects_and_decodes_masks() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json=_sam_response(SAM_LINE))
-
-    result = MetaSam(_client(handler)).segment_image(
-        image_input_from_bytes(_tiny_png(), "image/png"), "button"
-    )
-    assert result.count == 2
-    assert [o.object_id for o in result.objects] == ["0", "1"]
-    first = result.objects[0]
-    assert (first.mask_height, first.mask_width) == (27, 60)
-    assert len(first.mask) == 27 * 60
-    assert set(first.mask) <= {0, 1}
-    # Wire x2/y2 are inclusive; the parser returns half-open right/bottom (x2+1, y2+1).
-    assert (first.left, first.top, first.right, first.bottom) == (211, 228, 271, 255)
-
-
-def test_sam_zero_matches_is_valid_empty_result() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json=_sam_response(""))
-
-    result = MetaSam(_client(handler)).segment_image(
-        image_input_from_bytes(_tiny_png(), "image/png"), "unicorn"
-    )
-    assert result.count == 0
-
-
-def test_sam_malformed_line_is_a_response_error() -> None:
-    bad = "<0f>0<|box;x1=1;y1=2;x2=3|>"  # missing required fields and no mask
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json=_sam_response(bad))
-
-    with pytest.raises(MetaResponseError):
-        MetaSam(_client(handler)).segment_image(image_input_from_bytes(_tiny_png(), "image/png"), "button")
-
-
-@pytest.mark.parametrize("concept", ["", "   ", "bus, bicycle", "red; blue", "a\nb"])
-def test_sam_rejects_non_noun_phrase_concepts(concept: str) -> None:
-    with pytest.raises(ValueError):
-        validate_concept(concept)
-
-
-def test_sam_request_shape_is_single_user_message_with_phrase_and_image() -> None:
-    seen: dict[str, Any] = {}
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        seen["body"] = json.loads(request.content)
-        return httpx.Response(200, json=_sam_response(""))
-
-    MetaSam(_client(handler)).segment_image(
-        image_input_from_bytes(_tiny_png(), "image/png"), "text field", include_confidence=True
-    )
-    body = seen["body"]
-    assert body["model"] == "sam-3.1"
-    assert body["input"][0]["content"][0] == {"type": "input_text", "text": "text field"}
-    assert body["input"][0]["content"][1]["type"] == "input_image"
-    assert body["metadata"] == {"include_confidence": "true"}
+    out, w, h = resize_lanczos_to_square(_tiny_png(), 1024)
+    assert (w, h) == (1024, 1024)
+    assert out.startswith(b"\x89PNG")

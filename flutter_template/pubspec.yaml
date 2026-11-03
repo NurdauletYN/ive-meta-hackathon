@@ -1,0 +1,27 @@
+name: rocket_capsule
+description: Rocket capsule Flutter template with protected core and editable app layer.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  go_router: ^14.8.1
+  flutter_markdown: ^0.7.7+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/legal/terms.md
+    - assets/legal/privacy.md
+    - assets/onboarding/onboarding.json
+    - lib/app/design_tokens.json
