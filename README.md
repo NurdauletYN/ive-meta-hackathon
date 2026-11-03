@@ -18,6 +18,7 @@ uv run harness gate flutter_template --build-web
 uv run pytest
 uv run harness ui --port 8765   # http://127.0.0.1:8765/  phone-first studio; fake first
 uv run harness sweep --pilots muse,baseten --max-usd 8 --max-usd-per-pilot 4
+uv run harness report   # ivebench/results/results.md (counts only)
 ```
 
 Offline Pilot loop (no API key): `FakePilot` is canned JSON for tests.

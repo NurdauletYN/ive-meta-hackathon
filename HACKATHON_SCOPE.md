@@ -42,6 +42,7 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `src/harness/skin.py` | done | 2026-11-04 | NEW | Immediate HTML phone screen from tokens while Flutter builds |
 | `src/harness/sweep.py` | done | 2026-11-04 | NEW | ideas × live pilots × harness/bare; infra vs quality; resume; dirty-tree refusal |
 | `src/harness/classify.py` | done | 2026-11-04 | NEW | pass / quality_fail / infra_fail |
+| `src/harness/report.py` | done | 2026-11-04 | NEW | `harness report` → counts-only results.md |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 

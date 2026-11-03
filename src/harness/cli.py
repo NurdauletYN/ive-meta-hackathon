@@ -16,6 +16,7 @@ from harness.build import run_build
 from harness.design import pick_direction, run_design
 from harness.gate import gate_json, run_gate
 from harness.serve import serve
+from harness.report import write_results
 from harness.sweep import DirtyTreeError, load_ideas, run_sweep
 from harness.ui import serve_ui
 
@@ -66,6 +67,10 @@ def main(argv: list[str] | None = None) -> None:
     sweep.add_argument("--build-web", action="store_true")
     sweep.add_argument("--call-timeout", type=float, default=300)
     sweep.add_argument("--run-timeout", type=float, default=900)
+
+    report = sub.add_parser("report", help="Write counts-only results.md from a sweep folder")
+    report.add_argument("--in", dest="indir", type=Path, default=ROOT / "ivebench" / "results" / "sweep")
+    report.add_argument("--out", dest="outfile", type=Path, default=ROOT / "ivebench" / "results" / "results.md")
 
     args = parser.parse_args(argv)
     try:
@@ -153,6 +158,11 @@ def _dispatch(args: argparse.Namespace) -> None:
         print(json.dumps(summary, indent=2, default=str))
         failed = any(r.get("outcome") == "quality_fail" for r in summary["rows"])
         sys.exit(1 if failed else 0)
+
+    if args.command == "report":
+        path = write_results(args.indir, args.outfile)
+        print(path.read_text(encoding="utf-8"))
+        return
 
 
 if __name__ == "__main__":
