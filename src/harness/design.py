@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from pilot.schemas import DIRECTIONS_SCHEMA, REGENERATE_DIRECTION_SCHEMA, Direction, DirectionsPlan, schema_errors
@@ -13,6 +13,7 @@ from pilot.session import PilotSession
 from .copy_project import copy_tree
 from .diversity import contrast_errors, diversity_errors
 from .tokens import apply_tokens
+from .web_build import flutter_web_build
 
 DESIGN_SYSTEM = """Return exactly 3 design directions. Each has name, rationale, and tokens:
 colors.primary/on_primary/surface/on_surface as #RRGGBB, contrast_pairs that meet WCAG AA 4.5:1,
@@ -24,15 +25,8 @@ corner_radius or typography values across the set.
 BuildFn = Callable[[Path], tuple[bool, str]]
 
 
-def _flutter_web_build(project: Path) -> tuple[bool, str]:
-    proc = subprocess.run(
-        ["flutter", "build", "web", "--release"],
-        cwd=project,
-        capture_output=True,
-        text=True,
-    )
-    out = ((proc.stdout or "") + (proc.stderr or ""))[-2000:]
-    return proc.returncode == 0, out
+def _flutter_web_build(project: Path, base_href: str | None = None) -> tuple[bool, str]:
+    return flutter_web_build(project, base_href=base_href)
 
 
 def request_directions(session: PilotSession, idea: str) -> list[Direction]:
@@ -106,31 +100,61 @@ def run_design(
     capsule: Path,
     out_dir: Path,
     build_fn: BuildFn | None = None,
+    public_prefix: str | None = None,
 ) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
+    prefix = public_prefix or f"/runs/{out_dir.name}/"
+    session.emit("stage", name="design", status="start")
     directions = request_directions(session, idea)
     contrast_issues = [err for d in directions for err in contrast_errors(d)]
     if contrast_issues:
-        # One retry of the whole set if contrast fails (schema retry already happened).
         directions = request_directions(session, idea + "\n\nContrast failures:\n" + "\n".join(contrast_issues))
         contrast_issues = [err for d in directions for err in contrast_errors(d)]
     directions = _fix_diversity(session, idea, directions)
     diversity_issues = diversity_errors(directions)
     contrast_issues = [err for d in directions for err in contrast_errors(d)]
+    session.emit(
+        "stage",
+        name="design",
+        status="ok",
+        names=[d.name for d in directions],
+        contrast_ok=not contrast_issues,
+        diversity_ok=not diversity_issues,
+    )
 
-    builder = build_fn if build_fn is not None else _flutter_web_build
-    builds = []
-    for index, direction in enumerate(directions, start=1):
+    def _one(index: int, direction: Direction) -> dict:
         dest = out_dir / f"dir_{index}"
         copy_tree(capsule, dest)
         apply_tokens(dest, direction)
-        ok, log = builder(dest)
-        builds.append({"dir": dest.name, "ok": ok, "log_tail": log[-500:]})
+        href = f"{prefix}dir_{index}/build/web/"
+        skipped = build_fn is not None
+        if skipped:
+            ok, log = build_fn(dest)
+        else:
+            ok, log = _flutter_web_build(dest, href)
+        preview = None if skipped or not ok else href
+        session.emit(
+            "direction",
+            index=index,
+            name=direction.name,
+            primary=direction.tokens.colors.primary,
+            preview=preview,
+            ok=ok,
+        )
+        return {"dir": dest.name, "ok": ok, "log_tail": log[-500:], "preview": preview, "index": index}
+
+    builds: list[dict] = [{}] * len(directions)
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futs = {pool.submit(_one, i, d): i for i, d in enumerate(directions, start=1)}
+        for fut in as_completed(futs):
+            item = fut.result()
+            builds[item["index"] - 1] = item
     write_gallery(out_dir, directions)
     (out_dir / "directions.json").write_text(
         json.dumps({"idea": idea, "directions": [d.model_dump() for d in directions]}, indent=2),
         encoding="utf-8",
     )
+    session.emit("done", ok=not contrast_issues and not diversity_issues, kind="design")
     return {
         "out_dir": str(out_dir),
         "directions": [d.model_dump() for d in directions],

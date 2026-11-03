@@ -1,12 +1,14 @@
-# Local harness tester
+# Rocket studio
 
-A small dashboard, written this week, so you can drive **design / build / gate** without the private Ive product.
+Local tester, written this week. Not the Ive product.
 
 ```bash
 uv run harness ui --port 8765
-# open http://127.0.0.1:8765/
+# http://127.0.0.1:8765/
 ```
 
-Start with **Pilot = fake** (canned JSON, no API spend). Switch to **muse** only with a `--max-usd` cap. Flutter web builds are off unless you tick the box.
+- **3 directions** — Muse (or FakePilot) proposes three token sets. Click a phone to pick it.
+- **Build harness** — spec + guarded file ops + gate. Optional Flutter web preview in the phone frame.
+- **Compare bare** — same prompt, capsule vs blank `flutter create`, two phones.
 
-Auth and billing in the capsule are in-memory mocks. Preflight is not legal advice.
+Start with Pilot = fake. Turn on **web preview** only when you want `flutter build web` (~13s). Muse spends the `--max-usd` cap.

@@ -35,7 +35,9 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `docs/preflight.md` | done | 2026-11-03 | NEW | Check descriptions; not legal advice |
 | `tests/test_guard.py`, `test_preflight.py`, `test_pilot.py` | done | 2026-11-03 | NEW | Guard, preflight, FakePilot e2e (repair, guard, invalid JSON, budget) |
 | `src/codegen/`, `compile_runner/`, `storepack/` | not started | — | — | Placeholder READMEs only; repair loop lives in `src/harness/build.py` |
-| `demo/` + `src/harness/ui.py` | done | 2026-11-03 | NEW | Local tester UI (`harness ui`); not the private Ive front end |
+| `demo/` + `src/harness/ui.py` | done | 2026-11-03 | NEW | Studio: SSE events, phone preview, compare, design pick. Not the Ive product. |
+| `src/harness/events.py` | done | 2026-11-03 | NEW | Run event jsonl + in-process hub |
+| `src/harness/web_build.py` | done | 2026-11-03 | NEW | `flutter build web --base-href` so iframe previews resolve |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 

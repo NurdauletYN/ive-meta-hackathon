@@ -11,6 +11,8 @@ from pathlib import Path
 from preflight import run_preflight
 from preflight.types import CheckResult, CheckStatus
 
+from .web_build import flutter_web_build
+
 
 @dataclass
 class StepResult:
@@ -36,7 +38,12 @@ def _run(cmd: list[str], cwd: Path) -> tuple[int, str, float]:
     return proc.returncode, output.strip()[:4000], duration_ms
 
 
-def run_gate(project_dir: Path, *, build_web: bool = False) -> GateReport:
+def run_gate(
+    project_dir: Path,
+    *,
+    build_web: bool = False,
+    base_href: str | None = None,
+) -> GateReport:
     project = project_dir.resolve()
     steps: list[StepResult] = []
 
@@ -44,8 +51,10 @@ def run_gate(project_dir: Path, *, build_web: bool = False) -> GateReport:
     steps.append(StepResult("flutter_analyze", code == 0, ms, out if code else None))
 
     if build_web:
-        code, out, ms = _run(["flutter", "build", "web", "--release"], project)
-        steps.append(StepResult("flutter_build_web", code == 0, ms, out if code else None))
+        started = time.perf_counter()
+        ok, out = flutter_web_build(project, base_href=base_href)
+        ms = round((time.perf_counter() - started) * 1000, 1)
+        steps.append(StepResult("flutter_build_web", ok, ms, out if not ok else None))
 
     preflight = run_preflight(project)
     preflight_ok = all(r.status != CheckStatus.FAIL for r in preflight)

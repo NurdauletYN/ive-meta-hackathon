@@ -22,6 +22,8 @@ from .guard import FileOp, validate_operations
 from preflight.types import CheckStatus
 
 from .prompts import BARE_REQUIREMENTS, CAPSULE_PREFIX
+from .tokens import apply_tokens
+from pilot.schemas import Direction
 
 HARNESS_ALLOWED = ["lib/app/features/**", "lib/app/strings.dart", "lib/app/strings"]
 MAX_GUARD_ROUNDS = 2
@@ -92,6 +94,8 @@ def request_and_apply_ops(
             parsed = [FileOp.model_validate(raw) for raw in ops]
             apply_errors = apply_operations(project, parsed)
             log["apply_errors"] = [asdict(e) for e in apply_errors]
+            for op in parsed:
+                session.emit("file", op=op.op, path=op.path, preview=(op.content or "")[:500])
             if apply_errors and round_i < MAX_GUARD_ROUNDS:
                 log["guard_rounds"] = round_i + 1
                 payload = session.complete_json(
@@ -107,6 +111,8 @@ def request_and_apply_ops(
             log["applied"] = len(parsed)
             return log
         log["violations"].extend(asdict(v) for v in violations)
+        for v in violations:
+            session.emit("guard", code=v.code, path=v.path, message=v.message)
         if round_i >= MAX_GUARD_ROUNDS:
             break
         log["guard_rounds"] = round_i + 1
@@ -194,6 +200,16 @@ def default_flutter_create(dest: Path, pubspec: Path) -> None:
     )
 
 
+def _apply_choice_tokens(run_dir: Path, project: Path) -> str | None:
+    path = run_dir / "choice.json"
+    if not path.is_file():
+        return None
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    direction = Direction.model_validate(raw["direction"])
+    apply_tokens(project, direction)
+    return direction.name
+
+
 def run_build(
     idea: str,
     session: PilotSession,
@@ -204,13 +220,16 @@ def run_build(
     gate_fn: GateFn | None = None,
     create_fn: CreateFn | None = None,
     build_web: bool = True,
+    web_base_href: str | None = None,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     stages: dict[str, float] = {}
     run_dir.mkdir(parents=True, exist_ok=True)
     project = run_dir / "project"
-    gate = gate_fn or (lambda p: run_gate(p, build_web=build_web))
+    href = web_base_href or f"/runs/{run_dir.name}/project/build/web/"
+    gate = gate_fn or (lambda p: run_gate(p, build_web=build_web, base_href=href))
 
+    session.emit("stage", name="prepare", status="start", mode=mode)
     t0 = time.perf_counter()
     if mode == "harness":
         copy_tree(capsule, project)
@@ -223,7 +242,11 @@ def run_build(
         allowed = None
     else:
         raise ValueError("mode must be harness or bare")
+    choice_name = _apply_choice_tokens(run_dir, project)
+    if choice_name:
+        session.emit("choice", name=choice_name)
     stages["prepare_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+    session.emit("stage", name="prepare", status="ok", ms=stages["prepare_ms"])
 
     spec: AppSpec | None = None
     ops_log: dict[str, Any] = {}
@@ -231,6 +254,7 @@ def run_build(
     repair_rounds = 0
     error: str | None = None
     try:
+        session.emit("stage", name="spec", status="start")
         t0 = time.perf_counter()
         spec = _schema_loop(
             session,
@@ -246,7 +270,9 @@ def run_build(
         (run_dir / "spec.json").write_text(spec.model_dump_json(indent=2) + "\n", encoding="utf-8")
         apply_spec_assets(project, spec)
         stages["spec_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        session.emit("stage", name="spec", status="ok", app_name=spec.app_name, ms=stages["spec_ms"])
 
+        session.emit("stage", name="file_ops", status="start")
         t0 = time.perf_counter()
         build_user = (
             f"AppSpec:\n{spec.model_dump_json()}\n\n"
@@ -256,11 +282,15 @@ def run_build(
         )
         ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)
         stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=ops_log.get("applied"))
 
+        session.emit("stage", name="gate", status="start")
         t0 = time.perf_counter()
         report = gate(project)
+        _emit_gate(session, report)
         while not report.ok and repair_rounds < MAX_GATE_REPAIRS:
             repair_rounds += 1
+            session.emit("repair", round=repair_rounds)
             fail_text = _failing_text(report)
             files = _read_relevant_files(project)
             request_and_apply_ops(
@@ -275,7 +305,11 @@ def run_build(
                 ),
             )
             report = gate(project)
+            _emit_gate(session, report)
         stages["gate_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        session.emit("stage", name="gate", status="ok" if report.ok else "fail", ms=stages["gate_ms"])
+        if build_web and report.ok:
+            session.emit("preview", url=href, mode=mode)
     except BudgetExceeded:
         raise
     except Exception as exc:
@@ -305,4 +339,24 @@ def run_build(
         "project": str(project),
     }
     (run_dir / "result.json").write_text(json.dumps(result, indent=2, default=str) + "\n", encoding="utf-8")
+    session.emit(
+        "done",
+        ok=result["ok"],
+        error=error,
+        preview=href if build_web and result["ok"] else None,
+        mode=mode,
+    )
     return result
+
+
+def _emit_gate(session: PilotSession, report: GateReport) -> None:
+    for step in report.steps:
+        session.emit("gate_step", name=step.name, ok=step.ok, ms=step.duration_ms)
+    for check in report.preflight:
+        session.emit(
+            "preflight",
+            check_id=check.check_id,
+            status=str(check.status),
+            message=check.message,
+            file=check.file,
+        )
