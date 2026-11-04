@@ -62,6 +62,9 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `lib/core/auth/firebase_*` | done | 2026-11-04 | NEW | Config-gated FirebaseAuthService; fake gateway tests; no live calls |
 | `lib/core/billing/revenuecat_*` | done | 2026-11-04 | NEW | Config-gated RevenueCatBillingService; fake gateway tests; paywall offerings; no live calls |
 | `docs/revenuecat.md` | done | 2026-11-04 | NEW | Product setup in ASC + RevenueCat; unverified until a sandbox purchase |
+| `lib/core/kit/` | done | 2026-11-04 | NEW | Token-driven widgets (RocketScaffold, ItemCard, …). Protected. |
+| `docs/kit_api.md` | done | 2026-11-04 | NEW | Compact kit API; concatenated into CAPSULE_PREFIX |
+| `kit_usage`, `not_text_only` | done | 2026-11-04 | NEW | Preflight WARN checks on generated screens |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 

@@ -266,7 +266,8 @@ def run_build(
             system,
             (
                 f"Write an AppSpec for this idea:\n{idea}\n\n"
-                "Keep it small: at most 2 screens and 1 data model. Short copy."
+                "Plan at least 3 screens: a main browse/list, a detail or create flow, "
+                "and a profile/summary. One data model. Short copy."
             ),
             APP_SPEC_SCHEMA,
             "spec",
@@ -293,11 +294,13 @@ def run_build(
         t0 = time.perf_counter()
         build_user = (
             f"AppSpec:\n{spec.model_dump_json()}\n\n"
-            "Emit at most 3 file operations. Implement ONE StatefulWidget screen with in-memory "
-            "state: a list the user can add and remove, or a two-step form. Use setState. "
-            "Register it FIRST in extraFeatureRoutes() — that entry is the app home at /. "
-            "Keep the FeatureRoute class in registry.dart. Each Dart file under 80 lines. "
-            "Writes use content; find and replace must be JSON null. "
+            "Emit at most 6 file operations. Implement at least 3 screens with in-memory "
+            "state (StatefulWidget + setState): (1) a browse/list, (2) a detail or create flow, "
+            "(3) a profile/summary. Seed 8 to 12 realistic items with emoji or icons — no network "
+            "images. Use ONLY kit widgets for layout (RocketScaffold, HeroHeader, ItemCard, …). "
+            "Register screens in extraFeatureRoutes(); the FIRST entry is home at /. Mark up to 4 "
+            "as tab: true with an emoji icon. Keep the FeatureRoute class in registry.dart. "
+            "Each Dart file under 100 lines. Writes use content; find and replace must be JSON null. "
             "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core."
         )
         ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)

@@ -14,6 +14,9 @@ def tokens_to_json(tokens: DesignTokens) -> dict:
         "contrast_pairs": [p.model_dump() for p in tokens.contrast_pairs],
         "corner_radius": tokens.corner_radius,
         "typography": tokens.typography,
+        "spacing": tokens.spacing.model_dump(),
+        "radii": tokens.radii.model_dump(),
+        "type_scale": tokens.type_scale.model_dump(),
     }
 
 

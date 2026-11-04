@@ -6,7 +6,10 @@
     "colors": ["primary", "on_primary", "surface", "on_surface"],
     "contrast_pairs": "foreground/background hex pairs checked for WCAG AA",
     "corner_radius": "number, dp",
-    "typography": ["default", "compact", "expressive"]
+    "typography": ["default", "compact", "expressive"],
+    "spacing": ["xs", "sm", "md", "lg", "xl"],
+    "radii": ["sm", "md", "lg", "pill"],
+    "type_scale": ["display", "title", "body", "caption", "label"]
   },
   "core_changes": [
     {
@@ -98,6 +101,18 @@
       "author": "human harness",
       "date": "2026-11-04",
       "reason": "Creates BillingService through the config-gated factory at startup."
+    },
+    {
+      "path": "lib/core/kit/",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Token-driven kit widgets (RocketScaffold, HeroHeader, ItemCard, …). Protected. Pilots must layout generated screens with these widgets only."
+    },
+    {
+      "path": "lib/core/router/app_router.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Binds extraFeatureRoutes() tabs (label, icon, builder, up to 4) into KitNavigation so RocketScaffold can draw bottom navigation without the Pilot editing core."
     }
   ]
 }

@@ -31,6 +31,41 @@ CONTRAST_PAIR_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+SPACING_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "xs": {"type": "number"},
+        "sm": {"type": "number"},
+        "md": {"type": "number"},
+        "lg": {"type": "number"},
+        "xl": {"type": "number"},
+    },
+    "additionalProperties": False,
+}
+
+RADII_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "sm": {"type": "number"},
+        "md": {"type": "number"},
+        "lg": {"type": "number"},
+        "pill": {"type": "number"},
+    },
+    "additionalProperties": False,
+}
+
+TYPE_SCALE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "display": {"type": "number"},
+        "title": {"type": "number"},
+        "body": {"type": "number"},
+        "caption": {"type": "number"},
+        "label": {"type": "number"},
+    },
+    "additionalProperties": False,
+}
+
 TOKENS_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
@@ -38,6 +73,9 @@ TOKENS_SCHEMA: dict[str, Any] = {
         "contrast_pairs": {"type": "array", "items": CONTRAST_PAIR_SCHEMA},
         "corner_radius": {"type": "number"},
         "typography": {"type": "string", "enum": ["default", "compact", "expressive"]},
+        "spacing": SPACING_SCHEMA,
+        "radii": RADII_SCHEMA,
+        "type_scale": TYPE_SCALE_SCHEMA,
     },
     "required": ["colors", "contrast_pairs", "corner_radius", "typography"],
     "additionalProperties": False,
@@ -180,12 +218,41 @@ class TokenColors(BaseModel):
     on_surface: str
 
 
+class SpacingScale(BaseModel):
+    model_config = _FORBID
+    xs: float = 4
+    sm: float = 8
+    md: float = 16
+    lg: float = 24
+    xl: float = 32
+
+
+class RadiusScale(BaseModel):
+    model_config = _FORBID
+    sm: float = 8
+    md: float = 12
+    lg: float = 20
+    pill: float = 999
+
+
+class TypeScale(BaseModel):
+    model_config = _FORBID
+    display: float = 28
+    title: float = 20
+    body: float = 16
+    caption: float = 13
+    label: float = 12
+
+
 class DesignTokens(BaseModel):
     model_config = _FORBID
     colors: TokenColors
     contrast_pairs: list[ContrastPair] = Field(min_length=1)
     corner_radius: float
     typography: str
+    spacing: SpacingScale = Field(default_factory=SpacingScale)
+    radii: RadiusScale = Field(default_factory=RadiusScale)
+    type_scale: TypeScale = Field(default_factory=TypeScale)
 
 
 class Direction(BaseModel):
