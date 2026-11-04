@@ -56,6 +56,48 @@
       "author": "human harness",
       "date": "2026-11-04",
       "reason": "Creates AuthService through the config-gated factory at startup."
+    },
+    {
+      "path": "lib/core/billing/billing_service.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Added offerings() and isDemo so a config-gated RevenueCat adapter can share the interface."
+    },
+    {
+      "path": "lib/core/billing/mock_billing_service.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Demo fallback exposes isDemo and a local offering list when no RevenueCat key is supplied."
+    },
+    {
+      "path": "lib/core/billing/billing_factory.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Picks RevenueCatBillingService only when a user-supplied public key exists; otherwise MockBillingService (demo mode)."
+    },
+    {
+      "path": "lib/core/billing/revenuecat_billing_service.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "RevenueCatBillingService behind BillingService. Real SDK calls only through an injected gateway."
+    },
+    {
+      "path": "lib/core/paywall/paywall_screen.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Paywall renders offerings from BillingService and keeps restore purchases wired."
+    },
+    {
+      "path": "lib/core/settings/settings_screen.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Shows a demo mode label when billing is the mock fallback."
+    },
+    {
+      "path": "lib/main.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Creates BillingService through the config-gated factory at startup."
     }
   ]
 }

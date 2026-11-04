@@ -24,9 +24,9 @@ else
   bad "gitleaks (full git history)" "gitleaks binary not on PATH"
 fi
 
-FORBIDDEN=$(git ls-files | grep -E '(^|/)\.env$|\.p8$|GoogleService-Info\.plist$|google-services\.json$|firebase_options\.dart$' || true)
+FORBIDDEN=$(git ls-files | grep -E '(^|/)\.env$|\.p8$|GoogleService-Info\.plist$|google-services\.json$|firebase_options\.dart$|revenuecat_api_key\.txt$|revenuecat_key\.dart$' || true)
 if [[ -z "$FORBIDDEN" ]]; then
-  ok "no .env / *.p8 / GoogleService-Info.plist / firebase_options.dart tracked"
+  ok "no .env / *.p8 / GoogleService-Info.plist / firebase_options.dart / revenuecat key files tracked"
 else
   bad "tracked secret-named files" "$FORBIDDEN"
 fi

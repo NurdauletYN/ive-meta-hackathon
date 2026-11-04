@@ -7,6 +7,8 @@ AuthKey_*.p8
 GoogleService-Info.plist
 google-services.json
 firebase_options.dart
+revenuecat_api_key.txt
+revenuecat_key.dart
 .ship-build-number
 **/ExportOptions.plist
 ship_report.json
