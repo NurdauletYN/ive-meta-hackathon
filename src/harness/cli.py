@@ -20,6 +20,7 @@ from harness.report import write_results
 from harness.ship import ShipError, run_ship
 from harness.sweep import DirtyTreeError, load_ideas, run_sweep
 from harness.ui import serve_ui
+from harness.usage_report import load_usage, patch_metause, render_usage
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -77,6 +78,11 @@ def main(argv: list[str] | None = None) -> None:
     ship.add_argument("project_dir", type=Path)
     ship.add_argument("--target", choices=("testflight",), default="testflight")
     ship.add_argument("--dry-run", action="store_true", help="Validate inputs and print commands; execute nothing")
+
+    usage = sub.add_parser("usage-report", help="Aggregate usage.jsonl by model and stage")
+    usage.add_argument("--in", dest="usage_path", type=Path, default=ROOT / "ivebench" / "results" / "usage.jsonl")
+    usage.add_argument("--write-metause", action="store_true", help="Replace the marked table in METAUSE.md")
+    usage.add_argument("--out", dest="usage_out", type=Path, default=None)
 
     args = parser.parse_args(argv)
     try:
@@ -171,6 +177,16 @@ def _dispatch(args: argparse.Namespace) -> None:
     if args.command == "report":
         path = write_results(args.indir, args.outfile)
         print(path.read_text(encoding="utf-8"))
+        return
+
+    if args.command == "usage-report":
+        table = render_usage(load_usage(args.usage_path))
+        print(table)
+        if args.write_metause:
+            path = patch_metause(ROOT / "METAUSE.md", table)
+            print(f"wrote {path}")
+        if args.usage_out:
+            args.usage_out.write_text(table, encoding="utf-8")
         return
 
     if args.command == "ship":

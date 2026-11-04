@@ -58,6 +58,20 @@ def test_report_splits_infra_and_quality(tmp_path: Path) -> None:
     assert dest.is_file()
 
 
+def test_skips_rows_without_classified_outcome(tmp_path: Path) -> None:
+    sweep = tmp_path / "sweep"
+    sweep.mkdir()
+    (sweep / "sweep-muse-old-harness.json").write_text(
+        json.dumps({"pilot": "muse", "mode": "harness", "ok": True, "idea": "should-not-appear"}) + "\n",
+        encoding="utf-8",
+    )
+    dest = tmp_path / "results.md"
+    write_results(sweep, dest)
+    text = dest.read_text(encoding="utf-8")
+    assert "should-not-appear" not in text
+    assert "0/0" in text
+
+
 def test_write_results_from_files(tmp_path: Path) -> None:
     sweep = tmp_path / "sweep"
     sweep.mkdir()
