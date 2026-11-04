@@ -57,14 +57,23 @@ def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
         assert 'id="ticker"' in page.text
         assert "<summary>" in page.text
         assert 'id="steps"' in page.text
-        assert "Looks" in page.text
+        assert "Choose a look" in page.text
         assert "Offline demo (no API)" in page.text
-        assert "Compare without harness" in page.text
+        assert "Does the harness matter?" in page.text
+        assert "No sweep results exist yet." in page.text
+        assert "Use default look" in page.text
+        assert "pre-built, locked sign-in, onboarding, paywall and legal screens plus 12 store checks" in page.text
         assert 'id="evidence"' in page.text
         assert 'value="muse" selected' in page.text
         assert "Muse Spark" in page.text
         assert "From idea to TestFlight" in page.text
         assert "What should this app do?" in page.text
+        assert "Describe" in page.text
+        assert ">Build<" in page.text or ">Build</" in page.text
+        assert "Check" in page.text
+        assert "Ship" in page.text
+        footer = page.text.split("<footer>")[-1]
+        assert "Built with Muse Spark Open" not in footer
         assert 'data-hash="#/onboarding"' in page.text
         assert 'data-hash="#/signup"' in page.text
         assert 'data-hash="#/home"' in page.text
@@ -174,6 +183,27 @@ def test_compare_rejected_when_slots_full(tmp_path: Path) -> None:
         app.jobs["hold-b"] = {"status": "running"}
     started = app.start_compare({"idea": "tools", "pilot": "fake", "run_id": "cmp", "build_web": False})
     assert started["ok"] is False
+
+
+def test_harness_report_empty_state(tmp_path: Path) -> None:
+    app = HarnessUI(ROOT, runs=tmp_path / "runs", usage_path=tmp_path / "usage.jsonl")
+    handler = make_handler(app)
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        import httpx
+
+        port = httpd.server_address[1]
+        page = httpx.get(f"http://127.0.0.1:{port}/", timeout=5)
+        assert page.status_code == 200
+        assert "No sweep results exist yet." in page.text
+        assert "Does the harness matter?" in page.text
+        results = httpx.get(f"http://127.0.0.1:{port}/api/results", timeout=5)
+        assert results.status_code == 200
+        assert "0/0" in results.text
+    finally:
+        httpd.shutdown()
 
 
 def test_normalize_base_href() -> None:
