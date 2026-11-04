@@ -8,6 +8,9 @@ from statistics import median
 from typing import Any
 
 
+VALID_OUTCOMES = {"pass", "quality_fail", "infra_fail", "skipped"}
+
+
 def load_runs(out_dir: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     if not out_dir.is_dir():
@@ -18,6 +21,8 @@ def load_runs(out_dir: Path) -> list[dict[str, Any]]:
         except json.JSONDecodeError:
             continue
         if not isinstance(data, dict):
+            continue
+        if str(data.get("outcome") or "") not in VALID_OUTCOMES:
             continue
         rows.append(data)
     return rows
@@ -49,7 +54,11 @@ def render_results(rows: list[dict[str, Any]]) -> str:
         "| Pilot | Mode | passed / completed | passed / attempted | median cost (pass) | median repairs (pass) | median wall s (pass) |",
         "| --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for pilot in pilots or ["—"]:
+    if not rows:
+        lines.append("| — | — | 0/0 | 0/0 | — | — | — |")
+        lines.append("")
+        lines.append("No classified sweep JSON (`outcome` in pass / quality_fail / infra_fail) is committed in this folder.")
+    for pilot in pilots:
         for mode in modes:
             group = [r for r in rows if r.get("pilot") == pilot and r.get("mode") == mode]
             if not group:

@@ -45,6 +45,11 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `src/harness/report.py` | done | 2026-11-04 | NEW | `harness report` → counts-only results.md |
 | `src/harness/ship.py`, `redact.py` | done | 2026-11-04 | NEW | `harness ship --target testflight`; fake-runner tests; no live Apple calls |
 | `docs/ship.md` | done | 2026-11-04 | NEW | Manual ASC prerequisites; what is and is not automated |
+| `docs/VISION.md` | done | 2026-11-04 | NEW | Product goal (Rocket = harness, model = pilot) |
+| `src/harness/usage_report.py` | done | 2026-11-04 | NEW | `harness usage-report` from usage.jsonl |
+| `docs/VIDEO_SCRIPT.md` | done | 2026-11-04 | NEW | 3-minute outline with `{RESULT_*}` placeholders |
+| `LICENSE` | done | 2026-11-04 | NEW | Draft MIT; choice pending owner confirmation |
+| `scripts/prepublish_check.sh` | done | 2026-11-04 | NEW | Gitleaks, secret filenames, tests, gate, clone, README links |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 
