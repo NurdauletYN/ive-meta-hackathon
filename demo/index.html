@@ -13,7 +13,7 @@
         <h1>Rocket</h1>
       </div>
       <p class="ticker" id="ticker">Describe an app. It appears in the phone.</p>
-      <p class="cost" id="cost">$0.00</p>
+      <p class="cost" id="cost" aria-label="session cost">$0.00</p>
     </header>
     <ol class="steps" id="steps" aria-label="progress">
       <li data-step="idea" class="on">idea</li>
@@ -23,19 +23,28 @@
     </ol>
 
     <section class="composer">
-      <textarea id="idea" rows="2" placeholder="Describe the app…"></textarea>
-      <div class="chips" id="ideas"></div>
+      <label class="field">
+        <span>App idea</span>
+        <textarea id="idea" rows="2" placeholder="Describe the app…"></textarea>
+      </label>
+      <div class="chips" id="ideas" aria-label="sample ideas"></div>
       <div class="controls">
-        <select id="pilot">
-          <option value="fake">fake · offline</option>
-          <option value="muse">muse · Meta API</option>
-          <option value="baseten">baseten · Spark Open</option>
-        </select>
-        <input id="max_usd" type="number" min="0" step="0.1" value="3" title="max USD" />
+        <label class="field inline">
+          <span>Pilot</span>
+          <select id="pilot">
+            <option value="muse" selected>Muse Spark</option>
+            <option value="fake">Offline demo (no API)</option>
+            <option value="baseten">Muse Spark Open</option>
+          </select>
+        </label>
+        <label class="field inline">
+          <span>Max USD</span>
+          <input id="max_usd" type="number" min="0" step="0.1" value="3" />
+        </label>
         <label class="check"><input id="build_web" type="checkbox" checked /> Flutter preview</label>
-        <button type="button" id="btn-design">3 looks</button>
+        <button type="button" id="btn-design">Propose 3 looks</button>
         <button type="button" id="btn-build" class="primary">Build</button>
-        <button type="button" id="btn-compare">Compare bare</button>
+        <button type="button" id="btn-compare">Compare without harness</button>
       </div>
     </section>
 
@@ -52,12 +61,26 @@
       </div>
     </main>
 
+    <section id="evidence" class="evidence" hidden>
+      <h2>Evidence</h2>
+      <p id="evidence-meta" class="evidence-meta"></p>
+      <h3>Gate steps</h3>
+      <ul id="evidence-steps" class="rows"></ul>
+      <h3>Preflight</h3>
+      <ul id="evidence-preflight" class="rows"></ul>
+      <p id="evidence-ship" class="evidence-meta"></p>
+    </section>
+
+    <section id="compare-results" class="evidence" hidden>
+      <h2>Compare without harness</h2>
+      <p class="evidence-meta">From <code>harness report</code> (<code>ivebench/results/results.md</code>). Counts only.</p>
+      <div id="compare-table" class="md-tables"></div>
+    </section>
+
     <details class="details" id="details">
-      <summary>Details · gate, files, log</summary>
+      <summary>Details · files and log</summary>
       <div class="details-grid">
         <div>
-          <h2>Gate</h2>
-          <ul class="badges" id="preflight"></ul>
           <h2>Files</h2>
           <ul id="files"></ul>
           <pre id="file-view" class="file-view">Select a file.</pre>
