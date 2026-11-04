@@ -58,6 +58,8 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `src/harness/sameness.py` | done | 2026-11-04 | NEW | Pairwise Jaccard 5-grams over lib/app; report only |
 | `scaffold_only` mode | done | 2026-11-04 | NEW | Capsule + guard, one build call, zero repair rounds |
 | `lib/core/auth/firebase_*` | done | 2026-11-04 | NEW | Config-gated FirebaseAuthService; fake gateway tests; no live calls |
+| `lib/core/billing/revenuecat_*` | done | 2026-11-04 | NEW | Config-gated RevenueCatBillingService; fake gateway tests; paywall offerings; no live calls |
+| `docs/revenuecat.md` | done | 2026-11-04 | NEW | Product setup in ASC + RevenueCat; unverified until a sandbox purchase |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 
@@ -78,7 +80,7 @@ These are **ideas** common in app-shipping tooling, reimplemented here from scra
 | --- | --- |
 | httpx, pydantic, python-dotenv, pillow | Meta adapters + resize |
 | pytest, pre-commit (dev) | Tests, gitleaks hook |
-| Flutter: go_router, flutter_markdown | Capsule template |
+| Flutter: go_router, flutter_markdown, firebase_core, firebase_auth, purchases_flutter | Capsule template |
 
 ## Preexisting code
 

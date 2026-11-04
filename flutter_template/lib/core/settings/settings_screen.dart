@@ -17,10 +17,15 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text(AppStrings.settingsTitle)),
       body: ListView(
         children: [
-          if (auth.isDemo)
-            const ListTile(
-              title: Text('demo mode'),
-              subtitle: Text('Firebase config not supplied; in-memory auth.'),
+          if (auth.isDemo || billing.isDemo)
+            ListTile(
+              title: const Text('demo mode'),
+              subtitle: Text(
+                [
+                  if (auth.isDemo) 'Firebase config not supplied; in-memory auth.',
+                  if (billing.isDemo) 'RevenueCat key not supplied; mock billing.',
+                ].join(' '),
+              ),
             ),
           ListTile(
             title: const Text(AppStrings.privacyLabel),
