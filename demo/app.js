@@ -2,9 +2,29 @@ const $ = (id) => document.getElementById(id);
 const files = new Map();
 const active = new Set();
 const MODELS = {
-  muse: "muse-spark-1.3",
-  fake: "FakePilot (offline)",
-  baseten: "meta-models/muse-spark-open-1026",
+  muse: "Muse Spark",
+  fake: "Offline demo",
+  baseten: "Muse Spark Open",
+};
+const GATE_LABELS = {
+  flutter_analyze: "Analyze",
+  flutter_test: "Tests",
+  flutter_build_web: "Web preview",
+  preflight: "Store checks",
+};
+const CHECK_LABELS = {
+  privacy_link: "Privacy policy",
+  terms_link: "Terms of service",
+  account_deletion: "Delete account",
+  restore_purchases: "Restore purchases",
+  subscription_disclosure: "Subscription disclosure",
+  no_placeholders: "No placeholder copy",
+  wcag_contrast: "Contrast",
+  interactive_home: "Home is interactive",
+  smoke_tests_pass: "Smoke tests",
+  account_deletion_erases_data: "Deletion clears data",
+  home_not_webview: "Home is not a WebView",
+  remote_code: "No remote code",
 };
 let cost = 0;
 let designRun = null;
@@ -144,11 +164,11 @@ function handle(ev) {
   const type = ev.type;
   if (type === "stage") {
     const label = {
-      design: "Designing three looks…",
-      prepare: "Preparing the app shell…",
-      spec: "Writing the spec…",
-      file_ops: "Writing screens…",
-      gate: "Checking the app…",
+      design: "Sketching three looks…",
+      prepare: "Opening the app shell…",
+      spec: "Writing names and screens…",
+      file_ops: "Laying out the app…",
+      gate: "Running store checks…",
     }[ev.name] || ev.name;
     if (ev.status === "start") ticker(label, "busy");
     else if (ev.status === "ok") ticker(ev.app_name ? `${ev.app_name} is taking shape` : `${ev.name} ready`, "ok");
@@ -185,19 +205,20 @@ function handle(ev) {
     log(`repair round ${ev.round}`, "fail");
   } else if (type === "preview") {
     showPreview(ev.run_id, ev.url, ev.mode, ev.kind);
-    if (ev.kind === "skin") ticker("Draft look — writing screens…", "busy");
-    if (ev.kind === "web") ticker("Live Flutter preview", "ok");
+    if (ev.kind === "skin") ticker("Draft look on the phone — still writing screens…", "busy");
+    if (ev.kind === "web") ticker("Live Flutter preview on the phone", "ok");
   } else if (type === "direction") {
     showDirection(ev);
   } else if (type === "picked") {
-    ticker(`Using ${ev.name}. Hit Build.`, "ok");
+    ticker(`Using ${ev.name}. Build the app when you’re ready.`, "ok");
     for (const wrap of document.querySelectorAll(".phone-wrap")) wrap.classList.remove("picked");
     const card = document.getElementById(`dir-${ev.n}`);
     if (card) card.classList.add("picked");
   } else if (type === "done") {
     log(`${ev.run_id} done ${ev.ok ? "ok" : "fail"}`, ev.ok ? "ok" : "fail");
     if (ev.preview) showPreview(ev.run_id, ev.preview, ev.mode, ev.kind);
-    ticker(ev.ok ? "Ready" : (ev.error || "Failed"), ev.ok ? "ok" : "fail");
+    ticker(ev.ok ? "Your app is on the phone." : (ev.error || "Build failed"), ev.ok ? "ok" : "fail");
+    if (ev.ok) setStep("checks");
     const wrap = document.getElementById(`phone-${ev.run_id}`);
     if (wrap) {
       const slot = wrap.querySelector(".badge-slot");
@@ -291,15 +312,16 @@ async function fillEvidence(runId) {
   const repairs = summary.repair_rounds ?? repairSeen;
   const costUsd = tokens.est_cost_usd ?? cost;
   $("evidence-meta").textContent =
-    `pilot ${pilot} · model ${modelName(pilot)} · cost $${Number(costUsd || 0).toFixed(4)} · ` +
-    `tokens in ${tokens.input || 0} / cached ${tokens.cached || 0} / out ${tokens.output || 0} · ` +
-    `repair rounds ${repairs ?? 0}`;
+    `${modelName(pilot)} · $${Number(costUsd || 0).toFixed(2)} · ` +
+    `${tokens.input || 0} in / ${tokens.cached || 0} cached / ${tokens.output || 0} out · ` +
+    `${repairs ?? 0} repair ${Number(repairs) === 1 ? "round" : "rounds"}`;
   const steps = summary.gate_steps || [];
   const stepList = $("evidence-steps");
   if (steps.length) {
     stepList.innerHTML = "";
     for (const step of steps) {
-      appendRow(stepList, step.name || "step", step.ok, step.ok ? "ok" : "failed");
+      const name = GATE_LABELS[step.name] || step.name || "step";
+      appendRow(stepList, name, step.ok, step.ok ? "ok" : "failed");
     }
   }
   const checks = summary.preflight || [];
@@ -308,20 +330,21 @@ async function fillEvidence(runId) {
     list.innerHTML = "";
     for (const check of checks) {
       const status = String(check.status || "").split(".").pop();
-      appendRow(list, check.id || check.check_id || "check", status, check.message || "");
+      const id = check.id || check.check_id || "check";
+      appendRow(list, CHECK_LABELS[id] || id, status, check.message || "");
     }
   }
   const shipEl = $("evidence-ship");
-  shipEl.textContent = "ship report: none";
+  shipEl.textContent = "TestFlight: not uploaded from this window";
   try {
     const res = await fetch(`/runs/${encodeURIComponent(runId)}/project/ship_report.json`);
     if (res.ok) {
       const report = await res.json();
       const blob = JSON.stringify(report);
       if (blob.includes("ASC_") || blob.includes("BEGIN PRIVATE")) {
-        shipEl.textContent = "ship report: present (redacted display)";
+        shipEl.textContent = "TestFlight: report present (redacted)";
       } else {
-        shipEl.textContent = `ship report: ${report.outcome || report.ok}`;
+        shipEl.textContent = `TestFlight: ${report.outcome || report.ok}`;
       }
     }
   } catch {
@@ -390,7 +413,7 @@ async function pickDirection(index, card) {
   for (const wrap of document.querySelectorAll(".phone-wrap")) wrap.classList.remove("picked");
   card.classList.add("picked");
   const name = picked.choice?.direction?.name;
-  ticker(`Using ${name || "this look"}. Hit Build.`, "ok");
+  ticker(`Using ${name || "this look"}. Build the app when you’re ready.`, "ok");
 }
 
 function showDirection(ev) {
@@ -410,7 +433,7 @@ async function run(kind, extra) {
     resetSession();
     mountDirectionSlots();
     setStep("looks");
-    ticker("Designing three looks…", "busy");
+    ticker("Sketching three looks…", "busy");
   }
   if (kind === "build") {
     body.mode = extra.mode || "harness";
@@ -424,14 +447,14 @@ async function run(kind, extra) {
     $("phones").appendChild(card);
     setScreen(card.querySelector(".screen"), waiting("Building your app…"));
     setStep("build");
-    ticker("Building…", "busy");
+    ticker("Building the app onto the phone…", "busy");
   }
   if (kind === "compare") {
     body.run_id = extra.run_id || slug("cmp");
     if (designRun) body.choice_from = designRun;
     resetSession();
     setStep("compare");
-    ticker("Building harness and bare side by side…", "busy");
+    ticker("Building with Rocket and without it, side by side…", "busy");
   }
   const started = await api(`/api/${kind}`, {
     method: "POST",
