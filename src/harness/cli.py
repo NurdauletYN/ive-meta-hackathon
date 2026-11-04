@@ -1,4 +1,4 @@
-"""CLI: gate, design, design pick, serve, build."""
+"""CLI: gate, design, design pick, serve, build, ship."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from harness.design import pick_direction, run_design
 from harness.gate import gate_json, run_gate
 from harness.serve import serve
 from harness.report import write_results
+from harness.ship import ShipError, run_ship
 from harness.sweep import DirtyTreeError, load_ideas, run_sweep
 from harness.ui import serve_ui
 
@@ -72,6 +73,11 @@ def main(argv: list[str] | None = None) -> None:
     report.add_argument("--in", dest="indir", type=Path, default=ROOT / "ivebench" / "results" / "sweep")
     report.add_argument("--out", dest="outfile", type=Path, default=ROOT / "ivebench" / "results" / "results.md")
 
+    ship = sub.add_parser("ship", help="Build an IPA and upload to App Store Connect / TestFlight")
+    ship.add_argument("project_dir", type=Path)
+    ship.add_argument("--target", choices=("testflight",), default="testflight")
+    ship.add_argument("--dry-run", action="store_true", help="Validate inputs and print commands; execute nothing")
+
     args = parser.parse_args(argv)
     try:
         _dispatch(args)
@@ -81,6 +87,9 @@ def main(argv: list[str] | None = None) -> None:
     except DirtyTreeError as exc:
         print(json.dumps({"ok": False, "error": "dirty_tree", "message": str(exc)}), file=sys.stderr)
         sys.exit(2)
+    except ShipError as exc:
+        print(json.dumps({"ok": False, "error": "ship", "message": str(exc)}), file=sys.stderr)
+        sys.exit(1)
 
 
 def _dispatch(args: argparse.Namespace) -> None:
@@ -163,6 +172,15 @@ def _dispatch(args: argparse.Namespace) -> None:
         path = write_results(args.indir, args.outfile)
         print(path.read_text(encoding="utf-8"))
         return
+
+    if args.command == "ship":
+        result = run_ship(args.project_dir, target=args.target, dry_run=args.dry_run)
+        if result.get("dry_run"):
+            print("DRY-RUN (nothing executed)")
+            for cmd in result.get("commands") or result.get("planned") or []:
+                print(cmd)
+        print(json.dumps(result, indent=2, default=str))
+        sys.exit(0 if result.get("ok") else 1)
 
 
 if __name__ == "__main__":
