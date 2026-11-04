@@ -19,7 +19,7 @@ from pilot.protocol import BudgetExceeded
 from pilot.session import PilotSession
 from pilot.usage_log import DEFAULT_USAGE_PATH
 
-from .build import run_build
+from .build import run_build, run_improve
 from .design import pick_direction, run_design
 from .events import EventHub, EventLog
 from .gate import gate_json, run_gate
@@ -156,7 +156,7 @@ class HarnessUI:
         run_dir.mkdir(parents=True, exist_ok=True)
         events = EventLog(run_dir / "events.jsonl", listeners=[self.hub.publish])
         try:
-            idea = str(payload.get("idea") or "").strip()
+            idea = str(payload.get("idea") or payload.get("instruction") or "").strip()
             if kind != "gate" and not idea:
                 raise ValueError("idea is required")
             pilot = str(payload.get("pilot") or "fake")
@@ -220,6 +220,49 @@ class HarnessUI:
                     "ok": result.get("ok"),
                     "error": result.get("error"),
                     "mode": mode,
+                    "repair_rounds": result.get("repair_rounds"),
+                    "tokens": result.get("tokens"),
+                    "preview": (
+                        href
+                        if build_web and result.get("ok")
+                        else f"/runs/{run_id}/project/skin.html"
+                    ),
+                    "gate_steps": [
+                        {"name": s.get("name"), "ok": s.get("ok")} for s in (gate.get("steps") or [])
+                    ],
+                    "preflight": [
+                        {"id": p.get("check_id"), "status": str(p.get("status")), "message": p.get("message")}
+                        for p in (gate.get("preflight") or [])
+                    ],
+                    "result": f"/runs/{run_id}/result.json",
+                }
+            elif kind == "improve":
+                from_run = str(payload.get("from_run") or "").strip()
+                if not from_run or not _RUN_ID.match(from_run):
+                    raise ValueError("from_run is required")
+                source = self.runs / from_run / "project"
+                if not source.is_dir():
+                    raise ValueError("no app to improve yet — send an idea first")
+                session = self._session(pilot, run_id, max_usd_f, events)
+                mode = str(payload.get("mode") or "harness")
+                build_web = bool(payload.get("build_web"))
+                href = f"/runs/{run_id}/project/build/web/"
+                result = run_improve(
+                    idea,
+                    session,
+                    run_dir=run_dir,
+                    source_project=source,
+                    build_web=build_web,
+                    web_base_href=href,
+                    mode=mode,
+                )
+                gate = result.get("gate") or {}
+                summary = {
+                    "ok": result.get("ok"),
+                    "error": result.get("error"),
+                    "mode": mode,
+                    "kind": "improve",
+                    "from_run": from_run,
                     "repair_rounds": result.get("repair_rounds"),
                     "tokens": result.get("tokens"),
                     "preview": (
@@ -363,6 +406,9 @@ def make_handler(app: HarnessUI):
                 return
             if path == "/api/build":
                 self._json(200, app.start("build", payload))
+                return
+            if path == "/api/improve":
+                self._json(200, app.start("improve", payload))
                 return
             if path == "/api/compare":
                 self._json(200, app.start_compare(payload))

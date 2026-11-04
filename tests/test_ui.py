@@ -56,22 +56,15 @@ def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
         assert "Rocket studio" in page.text
         assert 'id="ticker"' in page.text
         assert "<summary>" in page.text
-        assert 'id="steps"' in page.text
-        assert "Choose a look" in page.text
+        assert 'id="thread"' in page.text
+        assert 'id="chat-form"' in page.text
         assert "Offline demo (no API)" in page.text
-        assert "Does the harness matter?" in page.text
-        assert "No sweep results exist yet." in page.text
-        assert "Use default look" in page.text
-        assert "pre-built, locked sign-in, onboarding, paywall and legal screens plus 12 store checks" in page.text
+        assert "Choose a look" not in page.text
+        assert "What kind of app do you want?" in page.text
         assert 'id="evidence"' in page.text
         assert 'value="muse" selected' in page.text
         assert "Muse Spark" in page.text
         assert "From idea to TestFlight" in page.text
-        assert "What should this app do?" in page.text
-        assert "Describe" in page.text
-        assert ">Build<" in page.text or ">Build</" in page.text
-        assert "Check" in page.text
-        assert "Ship" in page.text
         footer = page.text.split("<footer>")[-1]
         assert "Built with Muse Spark Open" not in footer
         assert 'data-hash="#/onboarding"' in page.text
@@ -82,8 +75,6 @@ def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
         assert 'data-hash="#/privacy"' in page.text
         assert "Onboarding" in page.text
         assert "Sign up" in page.text
-        assert "What's in your app" in page.text
-        assert "Paywall with subscription disclosure" in page.text
         started = httpx.post(
             f"{base}/api/design",
             json={"idea": "swap books", "pilot": "fake", "run_id": "http-d", "build_web": False},
@@ -185,6 +176,65 @@ def test_compare_rejected_when_slots_full(tmp_path: Path) -> None:
     assert started["ok"] is False
 
 
+def test_improve_requires_an_existing_app(tmp_path: Path) -> None:
+    app = HarnessUI(ROOT, runs=tmp_path / "runs", usage_path=tmp_path / "usage.jsonl")
+    started = app.start(
+        "improve",
+        {"idea": "add a saw", "pilot": "fake", "run_id": "imp-x", "from_run": "missing", "build_web": False},
+    )
+    assert started["ok"] is True
+    deadline = time.time() + 15
+    while app.job["status"] == "running" and time.time() < deadline:
+        time.sleep(0.05)
+    assert app.job["status"] == "error"
+    assert "no app to improve" in (app.job.get("error") or "").lower()
+
+
+def test_improve_applies_to_existing_project(tmp_path: Path) -> None:
+    from harness.build import run_build, run_improve
+    from harness.gate import GateReport, StepResult
+    from pilot.canned import FILE_OPS, canned_pilot
+    from pilot.fake import FakePilot
+    from pilot.session import PilotSession
+
+    usage = tmp_path / "usage.jsonl"
+
+    def pass_gate(_project):
+        return GateReport(str(_project), True, [StepResult("preflight", True, 1.0)], [])
+
+    first = tmp_path / "first"
+    session = PilotSession(canned_pilot(), run_id="imp-a", usage_path=usage)
+    built = run_build(
+        "tools",
+        session,
+        mode="harness",
+        run_dir=first,
+        capsule=ROOT / "flutter_template",
+        gate_fn=pass_gate,
+        build_web=False,
+    )
+    assert built["ok"] is True
+    store = first / "project" / "lib" / "app" / "features" / "browse" / "catalog_store.dart"
+    assert store.is_file()
+
+    fake = FakePilot()
+    fake.enqueue("file_ops", FILE_OPS)
+    session2 = PilotSession(fake, run_id="imp-b", usage_path=usage)
+    second = tmp_path / "second"
+    result = run_improve(
+        "keep the catalog",
+        session2,
+        run_dir=second,
+        source_project=first / "project",
+        gate_fn=pass_gate,
+        build_web=False,
+    )
+    assert result["ok"] is True
+    assert result["kind"] == "improve"
+    assert (second / "project" / "lib" / "app" / "features" / "browse" / "catalog_store.dart").is_file()
+    assert "The app already exists" in fake.calls[0][2]
+
+
 def test_harness_report_empty_state(tmp_path: Path) -> None:
     app = HarnessUI(ROOT, runs=tmp_path / "runs", usage_path=tmp_path / "usage.jsonl")
     handler = make_handler(app)
@@ -197,11 +247,16 @@ def test_harness_report_empty_state(tmp_path: Path) -> None:
         port = httpd.server_address[1]
         page = httpx.get(f"http://127.0.0.1:{port}/", timeout=5)
         assert page.status_code == 200
-        assert "No sweep results exist yet." in page.text
-        assert "Does the harness matter?" in page.text
+        assert "What kind of app do you want?" in page.text
         results = httpx.get(f"http://127.0.0.1:{port}/api/results", timeout=5)
         assert results.status_code == 200
         assert "0/0" in results.text
+        missing = httpx.post(
+            f"http://127.0.0.1:{port}/api/improve",
+            json={"idea": "add a filter", "pilot": "fake", "run_id": "nope", "from_run": "gone", "build_web": False},
+            timeout=5,
+        ).json()
+        assert missing["ok"] is True
     finally:
         httpd.shutdown()
 

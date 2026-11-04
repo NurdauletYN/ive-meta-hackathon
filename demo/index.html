@@ -18,39 +18,20 @@
           <em>From idea to TestFlight</em>
         </span>
       </a>
-      <p class="ticker" id="ticker">Describe the app. It appears on a phone.</p>
+      <p class="ticker" id="ticker">Type what you want. Keep going to improve it.</p>
       <p class="cost" id="cost" aria-label="session cost">$0.00</p>
     </header>
 
-    <ol class="steps" id="steps" aria-label="progress">
-      <li data-step="describe" class="on"><span>1</span> Describe</li>
-      <li data-step="looks"><span>2</span> Choose a look</li>
-      <li data-step="build"><span>3</span> Build</li>
-      <li data-step="check"><span>4</span> Check</li>
-      <li data-step="ship"><span>5</span> Ship</li>
-    </ol>
-
-    <div class="shell">
-      <section class="composer" aria-label="Brief">
-        <p class="eyebrow">Describe</p>
-        <h2>What should this app do?</h2>
-        <p class="lede">
-          Rocket is a harness: pre-built, locked sign-in, onboarding, paywall and legal screens plus 12 store checks the model cannot edit.
-          You write the idea. The model fills in the screens.
-        </p>
-        <label class="field">
-          <span>App idea</span>
-          <textarea id="idea" rows="4" placeholder="A neighborhood tool library for sharing drills, ladders, and saws…"></textarea>
-        </label>
-        <div class="chips" id="ideas" aria-label="sample ideas"></div>
-        <div class="actions">
-          <button type="button" id="btn-design">Choose a look</button>
-          <button type="button" id="btn-default-look">Use default look</button>
-          <button type="button" id="btn-build" class="primary" disabled>Build</button>
+    <div class="shell chat-shell">
+      <section class="composer chat" aria-label="Chat">
+        <div class="thread" id="thread">
+          <p class="thread-empty" id="thread-empty">What kind of app do you want?</p>
         </div>
-        <div class="actions secondary-actions">
-          <button type="button" id="btn-compare">Does the harness matter?</button>
-        </div>
+        <form class="chat-form" id="chat-form">
+          <label class="sr-only" for="idea">App idea</label>
+          <textarea id="idea" rows="1" placeholder="A neighborhood tool library…" required></textarea>
+          <button type="submit" id="btn-send" class="primary">Send</button>
+        </form>
         <details class="advanced">
           <summary>Model and spend</summary>
           <div class="controls">
@@ -72,7 +53,6 @@
       </section>
 
       <main class="stage">
-        <p class="eyebrow">Preview</p>
         <ol class="build-stepper" id="build-stepper" hidden>
           <li data-build="understand"><span class="step-name">Understanding your idea</span><span class="elapsed" data-elapsed></span></li>
           <li data-build="designing"><span class="step-name">Designing the screens</span><span class="elapsed" data-elapsed></span></li>
@@ -93,7 +73,6 @@
               <div class="screen">
                 <div class="empty-hero">
                   <p class="empty">Your app will show up here.</p>
-                  <p class="empty-sub">Choose a look, then build.</p>
                 </div>
               </div>
               <div class="home"></div>
@@ -108,42 +87,12 @@
           <button type="button" data-hash="#/settings">Settings</button>
           <button type="button" data-hash="#/privacy">Legal</button>
         </div>
-        <section class="whats-in" id="whats-in">
-          <p class="eyebrow">What's in your app</p>
-          <h3>Locked flows</h3>
-          <ul class="locked-flows">
-            <li><button type="button" class="linkish" data-hash="#/signup">Sign in</button></li>
-            <li><button type="button" class="linkish" data-hash="#/onboarding">Onboarding</button></li>
-            <li><button type="button" class="linkish" data-hash="#/paywall">Paywall with subscription disclosure</button></li>
-            <li><button type="button" class="linkish" data-hash="#/settings">Restore purchases</button></li>
-            <li><button type="button" class="linkish" data-hash="#/settings">Delete account</button></li>
-            <li><button type="button" class="linkish" data-hash="#/privacy">Privacy and terms</button></li>
-          </ul>
-          <h3>Store checks</h3>
-          <ul class="check-summary" id="check-summary">
-            <li>Privacy policy</li>
-            <li>Terms of service</li>
-            <li>Delete account</li>
-            <li>Restore purchases</li>
-            <li>Subscription disclosure</li>
-            <li>No placeholder copy</li>
-            <li>Contrast</li>
-            <li>Home is interactive</li>
-            <li>Smoke tests</li>
-            <li>Deletion clears data</li>
-            <li>Home is not a WebView</li>
-            <li>No remote code</li>
-            <li>Kit widgets</li>
-            <li>Not text-only</li>
-          </ul>
-        </section>
       </main>
     </div>
 
     <section id="evidence" class="evidence" hidden>
       <div class="evidence-head">
-        <p class="eyebrow">Check</p>
-        <h2>Store checks</h2>
+        <p class="eyebrow">Store checks</p>
         <p id="evidence-meta" class="evidence-meta"></p>
       </div>
       <div class="evidence-grid">
@@ -157,24 +106,6 @@
         </div>
       </div>
       <p id="evidence-ship" class="evidence-meta"></p>
-    </section>
-
-    <section id="compare-results" class="evidence" hidden>
-      <p class="eyebrow">Does the harness matter?</p>
-      <h2>Same idea, with and without Rocket</h2>
-      <p class="evidence-meta">From <code>harness report</code> (<code>ivebench/results/results.md</code>). Counts only.</p>
-      <p id="compare-empty">No sweep results exist yet.</p>
-      <div id="compare-table" class="md-tables"></div>
-    </section>
-
-    <section id="ship-panel" class="evidence" hidden>
-      <p class="eyebrow">Ship</p>
-      <h2>Listing and TestFlight</h2>
-      <p>
-        Icon, listing copy, and a privacy template (not legal advice) are prepared by
-        <code>harness storepack</code>. TestFlight upload is <code>harness ship</code> —
-        it needs your Apple keys on this machine, never in this window.
-      </p>
     </section>
 
     <details class="details" id="details">
@@ -193,9 +124,7 @@
     </details>
 
     <footer>
-      Auth and billing stay in demo until you add your own Firebase or RevenueCat keys.
-      Preflight is an engineering gate, not App Review, and not legal advice.
-      This UI is not the Ive product.
+      Preflight is an engineering gate, not App Review.
       <span id="used-model"></span>
     </footer>
     <script src="/app.js"></script>

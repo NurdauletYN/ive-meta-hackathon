@@ -185,6 +185,17 @@ def _read_relevant_files(project: Path, limit: int = 8) -> str:
     return "\n\n".join(chunks)
 
 
+def _read_feature_files(project: Path, limit: int = 12) -> str:
+    features = project / "lib" / "app" / "features"
+    root = features if features.is_dir() else project / "lib"
+    if not root.is_dir():
+        return ""
+    chunks: list[str] = []
+    for path in sorted(root.rglob("*.dart"))[:limit]:
+        chunks.append(f"--- {path.relative_to(project)} ---\n{path.read_text(encoding='utf-8')[:4000]}")
+    return "\n\n".join(chunks)
+
+
 def default_flutter_create(dest: Path, pubspec: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists():
@@ -372,6 +383,117 @@ def run_build(
         preview=preview,
         mode=mode,
     )
+    return result
+
+
+def run_improve(
+    instruction: str,
+    session: PilotSession,
+    *,
+    run_dir: Path,
+    source_project: Path,
+    gate_fn: GateFn | None = None,
+    build_web: bool = True,
+    web_base_href: str | None = None,
+    mode: str = "harness",
+) -> dict[str, Any]:
+    """Apply a follow-up instruction to an existing generated app. Does not copy a fresh capsule."""
+    started = time.perf_counter()
+    stages: dict[str, Any] = {}
+    run_dir.mkdir(parents=True, exist_ok=True)
+    project = run_dir / "project"
+    href = web_base_href or f"/runs/{run_dir.name}/project/build/web/"
+    gate = gate_fn or (lambda p: run_gate(p, build_web=build_web, base_href=href))
+    allowed = HARNESS_ALLOWED if mode in ("harness", "scaffold_only") else None
+    system = CAPSULE_PREFIX if mode != "bare" else BARE_REQUIREMENTS
+
+    session.emit("stage", name="prepare", status="start", mode=mode)
+    t0 = time.perf_counter()
+    if not source_project.is_dir():
+        raise FileNotFoundError(f"no app to improve at {source_project}")
+    copy_tree(source_project, project)
+    stages["prepare_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+    session.emit("stage", name="prepare", status="ok", ms=stages["prepare_ms"])
+
+    ops_log: dict[str, Any] = {}
+    report: GateReport | None = None
+    repair_rounds = 0
+    error: str | None = None
+    try:
+        session.emit("stage", name="file_ops", status="start")
+        t0 = time.perf_counter()
+        current = _read_feature_files(project)
+        improve_user = (
+            f"The app already exists. Apply this change only:\n{instruction}\n\n"
+            "Keep kit widgets, in-memory state, and the FeatureRoute class. "
+            "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core. "
+            "Writes use content; find and replace must be JSON null.\n\n"
+            f"Current feature files:\n{current}"
+        )
+        ops_log = request_and_apply_ops(session, system, improve_user, project, allowed_prefixes=allowed)
+        stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=ops_log.get("applied"))
+
+        session.emit("stage", name="gate", status="start")
+        t0 = time.perf_counter()
+        report = gate(project)
+        _emit_gate(session, report)
+        max_repairs = 0 if mode == "scaffold_only" else MAX_GATE_REPAIRS
+        while not report.ok and repair_rounds < max_repairs:
+            repair_rounds += 1
+            session.emit("repair", round=repair_rounds)
+            fail_text = _failing_text(report)
+            files = _read_feature_files(project)
+            request_and_apply_ops(
+                session,
+                system,
+                improve_user,
+                project,
+                allowed_prefixes=allowed,
+                extra_feedback=(
+                    f"Gate failed (round {repair_rounds}). Fix ONLY these errors:\n{fail_text}\n\n"
+                    f"Relevant files:\n{files}"
+                ),
+            )
+            report = gate(project)
+            _emit_gate(session, report)
+        stages["gate_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        session.emit("stage", name="gate", status="ok" if report.ok else "fail", ms=stages["gate_ms"])
+        if build_web and report.ok:
+            session.emit("preview", url=href, mode=mode, kind="web")
+    except BudgetExceeded:
+        raise
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+        if report is None:
+            report = GateReport(
+                project_dir=str(project),
+                ok=False,
+                steps=[StepResult("exception", False, 0.0, error)],
+                preflight=[],
+            )
+
+    token_totals = _token_totals(session.usage_path, session.run_id)
+    result = {
+        "pilot": session.pilot.name,
+        "mode": mode,
+        "idea": instruction,
+        "run_id": session.run_id,
+        "ok": bool(report and report.ok),
+        "error": error,
+        "gate": _gate_summary(report) if report is not None else None,
+        "repair_rounds": repair_rounds,
+        "ops": ops_log,
+        "tokens": token_totals,
+        "wall_ms": round((time.perf_counter() - started) * 1000, 1),
+        "stage_ms": stages,
+        "project": str(project),
+        "kind": "improve",
+    }
+    (run_dir / "result.json").write_text(json.dumps(result, indent=2, default=str) + "\n", encoding="utf-8")
+    skin_url = f"/runs/{run_dir.name}/project/skin.html"
+    preview = href if build_web and result["ok"] else (skin_url if (project / "skin.html").is_file() else None)
+    session.emit("done", ok=result["ok"], error=error, preview=preview, mode=mode)
     return result
 
 
