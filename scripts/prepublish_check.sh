@@ -37,22 +37,33 @@ else
   ok "no PEM private key blocks in committed files"
 fi
 
-# Non-empty assignments only (.env.example empty keys are allowed).
-if git grep -I -n -E -- 'META_API_KEY=.+' -- ':!.env.example' >/tmp/prepublish-keys.txt 2>/dev/null; then
-  if grep -E 'META_API_KEY=.+' /tmp/prepublish-keys.txt | grep -v -E 'META_API_KEY=\s*$' >/dev/null; then
-    bad "META_API_KEY value in committed files" "$(head -c 200 /tmp/prepublish-keys.txt)"
-  else
-    ok "no META_API_KEY values in committed files"
-  fi
+python3 - <<'PY'
+import re, subprocess, sys
+names = ("META_API_KEY", "ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_KEY_PATH", "OPENAI_COMPAT_API_KEY")
+pat = re.compile(r"(?:%s)\s*=\s*([^\s#]+)" % "|".join(names))
+skip = {".env.example", "scripts/prepublish_check.sh"}
+hits = []
+files = subprocess.check_output(["git", "ls-files"], text=True).splitlines()
+for rel in files:
+    if rel in skip:
+        continue
+    try:
+        text = open(rel, encoding="utf-8", errors="ignore").read()
+    except OSError:
+        continue
+    for match in pat.finditer(text):
+        value = match.group(1).strip().strip("\"'")
+        if len(value) >= 8 and not value.startswith("$"):
+            hits.append(f"{rel}: {match.group(0)[:80]}")
+if hits:
+    print("HITS " + " | ".join(hits[:5]))
+    sys.exit(1)
+print("OK")
+PY
+if [[ $? -eq 0 ]]; then
+  ok "no assigned API/ASC key values in committed files"
 else
-  ok "no META_API_KEY values in committed files"
-fi
-
-if git grep -I -n -E -- 'ASC_KEY_ID=.+|ASC_ISSUER_ID=.+|OPENAI_COMPAT_API_KEY=.+' -- ':!.env.example' \
-  | grep -v -E '=\s*$' >/tmp/prepublish-asc.txt 2>/dev/null; then
-  bad "non-empty ASC / OpenAI-compat keys in committed files" "$(head -c 200 /tmp/prepublish-asc.txt)"
-else
-  ok "no non-empty ASC / OpenAI-compat keys in committed files"
+  bad "assigned API/ASC key values in committed files" "see scanner output"
 fi
 
 if uv run --extra dev pytest -q; then
