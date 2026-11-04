@@ -35,7 +35,7 @@ class OnboardingScreen extends StatelessWidget {
                 Text(slots['hero_body'] ?? ''),
                 const Spacer(),
                 FilledButton(
-                  onPressed: () => context.go('/'),
+                  onPressed: () => context.go('/signup'),
                   child: const Text('Continue'),
                 ),
               ],

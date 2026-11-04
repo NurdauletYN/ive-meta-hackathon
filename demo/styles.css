@@ -335,6 +335,57 @@ button.primary {
 .empty { margin: 0; font-size: 1.02rem; color: var(--ink); }
 .empty-sub { margin: 0.45rem 0 0; font-size: 0.82rem; }
 
+.tour-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  margin: 0.85rem 0 0;
+}
+.tour-chips button, .linkish {
+  cursor: pointer;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  background: var(--panel);
+  padding: 0.3rem 0.65rem;
+}
+.tour-chips button.on {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.whats-in {
+  margin-top: 1.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.whats-in h3 {
+  margin: 0.7rem 0 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.locked-flows, .check-summary {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.locked-flows li, .check-summary li {
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+  color: var(--muted);
+}
+.linkish {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  border-radius: 0;
+}
+
 .evidence {
   margin: 2.5rem 0 0;
   padding: 1.4rem 1.5rem 1.5rem;

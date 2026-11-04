@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/auth_service.dart';
 import '../auth/in_memory_auth_service.dart';
+import '../auth/sign_up_screen.dart';
 import '../billing/billing_service.dart';
 import '../billing/mock_billing_service.dart';
 import '../kit/kit.dart';
@@ -44,9 +45,12 @@ class AppRouter {
       home: routes.isNotEmpty ? routes.first.path : '/home',
     );
     return GoRouter(
+      initialLocation: '/onboarding',
       routes: [
         GoRoute(path: '/', builder: (context, state) => _home(context)),
+        GoRoute(path: '/home', builder: (context, state) => _home(context)),
         GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
+        GoRoute(path: '/signup', builder: (context, state) => SignUpScreen(auth: auth)),
         GoRoute(
           path: '/settings',
           builder: (context, state) => SettingsScreen(auth: auth, billing: billing),

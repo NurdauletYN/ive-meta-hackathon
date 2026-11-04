@@ -113,6 +113,18 @@
       "author": "human harness",
       "date": "2026-11-04",
       "reason": "Binds extraFeatureRoutes() tabs (label, icon, builder, up to 4) into KitNavigation so RocketScaffold can draw bottom navigation without the Pilot editing core."
+    },
+    {
+      "path": "lib/core/router/app_router.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Web preview starts at /onboarding (hash routes). Adds /signup and /home so the studio tour can deep-link locked flows."
+    },
+    {
+      "path": "lib/core/auth/sign_up_screen.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Locked sign-up / sign-in screen at /signup for the preview tour."
     }
   ]
 }
