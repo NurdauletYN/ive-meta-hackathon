@@ -38,6 +38,9 @@ build/
 # Generated Pilot runs (result JSON is printed in reports; trees are local)
 runs/
 
+# Unofficial local sweep JSON (not a published quality result)
+ivebench/results/sweep/
+
 # Local tooling caches (not benchmark results)
 .tools/
 .uv-cache/

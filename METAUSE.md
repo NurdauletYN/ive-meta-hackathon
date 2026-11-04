@@ -29,13 +29,13 @@ Generated from `ivebench/results/usage.jsonl` by `harness usage-report`. Counts 
 | muse-image-1.0 | image.generate | 1 | 0 | 0 | 0 | 0.010000 |
 | muse-image-1.0 | storepack_icon | 1 | 0 | 0 | 0 | 0.010000 |
 | muse-spark-1.3 | design | 1 | 121 | 0 | 4365 | 0.018703 |
-| muse-spark-1.3 | file_ops | 44 | 64482 | 2161 | 266082 | 1.209074 |
-| muse-spark-1.3 | spec | 21 | 5961 | 0 | 56208 | 0.246335 |
+| muse-spark-1.3 | file_ops | 49 | 75100 | 2161 | 308049 | 1.400706 |
+| muse-spark-1.3 | spec | 25 | 9077 | 0 | 64304 | 0.284638 |
 | muse-spark-1.3 | storepack | 2 | 84 | 0 | 1486 | 0.006420 |
 | muse-spark-1.3 | text.generate | 1 | 15 | 0 | 287 | 0.001239 |
 | muse-spark-1.3 | text.structured | 13 | 5646 | 750 | 19109 | 0.087446 |
 | sam-3.1 | sam.segment_image | 14 | 0 | 0 | 0 | 0.035000 |
-| **total** | | 101 | 77591 | 3103 | 351080 | 1.654217 |
+| **total** | | 110 | 91325 | 3103 | 401143 | 1.884152 |
 
 SAM 3.1 rows are Day 1 history; that path was removed from the product.
 This table is usage, not a quality eval. Infra timeouts still appear as calls with `ok: false`.
