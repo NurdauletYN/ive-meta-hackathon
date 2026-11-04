@@ -79,23 +79,57 @@ function setUsedModel(pilot) {
   else el.textContent = "";
 }
 
+function thinkingDots() {
+  const dots = document.createElement("span");
+  dots.className = "dots";
+  dots.setAttribute("aria-hidden", "true");
+  dots.innerHTML = "<i></i><i></i><i></i>";
+  return dots;
+}
+
 function addBubble(role, text, cls) {
+  document.body.classList.remove("is-empty");
   const empty = $("thread-empty");
   if (empty) empty.remove();
   const div = document.createElement("div");
   div.className = "bubble " + role + (cls ? " " + cls : "");
-  div.textContent = text;
+  const span = document.createElement("span");
+  span.className = "bubble-text";
+  span.textContent = text;
+  div.appendChild(span);
+  if (cls && String(cls).includes("busy")) div.appendChild(thinkingDots());
   $("thread").appendChild(div);
-  div.scrollIntoView({ block: "end" });
+  div.scrollIntoView({ block: "end", behavior: "smooth" });
   return div;
 }
 
 function setStatus(text, cls) {
   if (!statusEl) statusEl = addBubble("assistant", text, cls);
   else {
-    statusEl.textContent = text;
+    const label = statusEl.querySelector(".bubble-text") || statusEl;
+    label.textContent = text;
     statusEl.className = "bubble assistant" + (cls ? " " + cls : "");
+    const existing = statusEl.querySelector(".dots");
+    if (cls && String(cls).includes("busy")) {
+      if (!existing) statusEl.appendChild(thinkingDots());
+    } else if (existing) {
+      existing.remove();
+    }
   }
+}
+
+function syncComposer() {
+  const el = $("idea");
+  const form = $("chat-form");
+  if (!el || !form) return;
+  el.style.height = "auto";
+  el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  form.dataset.empty = el.value.trim() ? "false" : "true";
+}
+
+function setRunning(on) {
+  const form = $("chat-form");
+  if (form) form.dataset.running = on ? "true" : "false";
 }
 
 function resetTurn() {
@@ -375,6 +409,7 @@ function handle(ev) {
       setBuildStep(currentBuildStep || "checks", { fail: true });
     }
     busy = false;
+    setRunning(false);
     $("btn-send").disabled = false;
     stopElapsed();
     const wrap = document.getElementById(`phone-${ev.run_id}`);
@@ -549,7 +584,9 @@ async function send(ev) {
   $("idea").value = "";
   addBubble("user", text);
   busy = true;
+  setRunning(true);
   $("btn-send").disabled = true;
+  syncComposer();
   const improving = Boolean(currentRunId);
   statusEl = addBubble("assistant", improving ? "Improving the app…" : "Building the app…", "busy");
   const kind = improving ? "improve" : "build";
@@ -581,6 +618,7 @@ async function send(ev) {
   });
   if (!started.ok) {
     busy = false;
+    setRunning(false);
     $("btn-send").disabled = false;
     ticker(plainError(started.error || "failed to start"), "fail");
     showError(started.error || "failed to start");
@@ -593,6 +631,7 @@ async function send(ev) {
 }
 
 $("chat-form").addEventListener("submit", send);
+$("idea").addEventListener("input", syncComposer);
 $("idea").addEventListener("keydown", (ev) => {
   if (ev.key === "Enter" && !ev.shiftKey) {
     ev.preventDefault();
@@ -606,6 +645,8 @@ document.querySelectorAll("[data-hash]").forEach((btn) => {
 
 async function boot() {
   connectEvents();
+  syncComposer();
+  $("idea").focus();
 }
 
 boot().catch((err) => ticker(String(err), "fail"));
