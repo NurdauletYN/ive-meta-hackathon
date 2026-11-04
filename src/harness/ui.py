@@ -23,6 +23,7 @@ from .build import run_build, run_improve
 from .design import pick_direction, run_design
 from .events import EventHub, EventLog
 from .gate import gate_json, run_gate
+from .projects import build_zip, get_project, list_projects, write_meta
 
 _RUN_ID = re.compile(r"^[a-zA-Z0-9._-]{1,64}$")
 MAX_JOBS = 2
@@ -155,11 +156,12 @@ class HarnessUI:
         run_dir = self.runs / run_id
         run_dir.mkdir(parents=True, exist_ok=True)
         events = EventLog(run_dir / "events.jsonl", listeners=[self.hub.publish])
+        idea = str(payload.get("idea") or payload.get("instruction") or "").strip()
+        pilot = str(payload.get("pilot") or "fake")
+        from_run = str(payload.get("from_run") or "").strip()
         try:
-            idea = str(payload.get("idea") or payload.get("instruction") or "").strip()
             if kind != "gate" and not idea:
                 raise ValueError("idea is required")
-            pilot = str(payload.get("pilot") or "fake")
             max_usd = payload.get("max_usd")
             max_usd_f = float(max_usd) if max_usd not in (None, "") else None
             capsule = self.root / "flutter_template"
@@ -237,7 +239,6 @@ class HarnessUI:
                     "result": f"/runs/{run_id}/result.json",
                 }
             elif kind == "improve":
-                from_run = str(payload.get("from_run") or "").strip()
                 if not from_run or not _RUN_ID.match(from_run):
                     raise ValueError("from_run is required")
                 source = self.runs / from_run / "project"
@@ -252,6 +253,7 @@ class HarnessUI:
                     session,
                     run_dir=run_dir,
                     source_project=source,
+                    capsule=self.root / "flutter_template",
                     build_web=build_web,
                     web_base_href=href,
                     mode=mode,
@@ -293,6 +295,21 @@ class HarnessUI:
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
             events.emit("done", run_id=run_id, ok=False, error=error)
+        if kind in ("build", "improve") and not run_id.endswith(("-harness", "-bare")):
+            try:
+                meta = write_meta(
+                    self.runs,
+                    run_id,
+                    kind=kind,
+                    instruction=idea,
+                    pilot=pilot,
+                    ok=error is None and bool((summary or {}).get("ok")),
+                    from_run=from_run if kind == "improve" and _RUN_ID.match(from_run) else None,
+                    error=error or (summary or {}).get("error"),
+                )
+                self.hub.publish({"type": "project", "run_id": run_id, "project": meta["project"], "version": meta["version"]})
+            except OSError:
+                pass
         job = {
             "status": "error" if error else "done",
             "kind": kind,
@@ -378,6 +395,32 @@ def make_handler(app: HarnessUI):
             if path == "/api/runs":
                 self._json(200, app.list_runs())
                 return
+            if path == "/api/projects":
+                self._json(200, list_projects(app.runs))
+                return
+            if path.startswith("/api/project/"):
+                project_id = path[len("/api/project/") :]
+                found = get_project(app.runs, project_id) if _RUN_ID.match(project_id) else None
+                if found is None:
+                    self._json(404, {"ok": False, "error": "project not found"})
+                else:
+                    self._json(200, found)
+                return
+            if path.startswith("/api/download/") and path.endswith(".zip"):
+                run_id = path[len("/api/download/") : -len(".zip")]
+                built = build_zip(app.runs, run_id) if _RUN_ID.match(run_id) else None
+                if built is None:
+                    self._json(404, {"ok": False, "error": "no project to download"})
+                    return
+                name, data = built
+                self.send_response(200)
+                self.send_header("Content-Type", "application/zip")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Content-Disposition", f'attachment; filename="{name}"')
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(data)
+                return
             if path.startswith("/runs/"):
                 rel = path[len("/runs/") :]
                 target = _safe_under(app.runs, rel)
@@ -446,6 +489,9 @@ def _content_type(path: Path) -> str:
         ".json": "application/json; charset=utf-8",
         ".svg": "image/svg+xml",
         ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".zip": "application/zip",
         ".wasm": "application/wasm",
         ".ttf": "font/ttf",
         ".otf": "font/otf",

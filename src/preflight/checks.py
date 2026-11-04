@@ -421,12 +421,24 @@ def check_remote_code(project: Path) -> CheckResult:
 
 KIT_WIDGETS = (
     "RocketScaffold",
+    "KitPage",
     "HeroHeader",
     "SectionTitle",
     "ItemCard",
+    "ProductCard",
+    "ProductGrid",
     "ChipRow",
     "KitBadge",
     "PriceTag",
+    "CartBar",
+    "FeaturedRow",
+    "FeaturedCard",
+    "SectionHeader",
+    "ListSection",
+    "ListRow",
+    "SegmentedTabs",
+    "ProgressRing",
+    "StatRow",
     "StatTile",
     "EmptyState",
     "PrimaryButton",
@@ -498,7 +510,7 @@ def check_not_text_only(project: Path) -> CheckResult:
     if not files:
         return CheckResult(check_id, CheckStatus.PASS, "no generated extra features")
     joined = "\n".join(text for _, text in files)
-    has_card = "ItemCard" in joined or "HeroHeader" in joined
+    has_card = "ItemCard" in joined or "HeroHeader" in joined or "ProductCard" in joined
     has_icon = _EMOJI.search(joined) is not None
     if has_card and has_icon:
         path, text = files[0]

@@ -11,23 +11,19 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final extras = extraFeatureRoutes();
-    final tokens = KitTokens.of(context);
     return RocketScaffold(
       title: AppStrings.homeTitle,
-      body: ListView(
-        padding: EdgeInsets.all(tokens.spacing.lg),
+      body: KitPage(
         children: [
           HeroHeader(
             title: AppStrings.appName,
             subtitle: 'Locked sign-in, onboarding, paywall and legal screens are already here.',
             emoji: '🚀',
           ),
-          SizedBox(height: tokens.spacing.lg),
           PrimaryButton(
             label: AppStrings.paywallTitle,
             onPressed: () => context.push('/paywall'),
           ),
-          SizedBox(height: tokens.spacing.sm),
           SecondaryButton(
             label: AppStrings.settingsTitle,
             onPressed: () => context.push('/settings'),

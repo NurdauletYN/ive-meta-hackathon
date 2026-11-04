@@ -1,7 +1,7 @@
 {
   "protected_paths": ["lib/core/**", "capsule.manifest.json"],
   "editable_paths": ["lib/app/**"],
-  "onboarding_slots": ["hero_title", "hero_body"],
+  "onboarding_slots": ["hero_title", "hero_body", "hero_hint"],
   "design_token_schema": {
     "colors": ["primary", "on_primary", "surface", "on_surface"],
     "contrast_pairs": "foreground/background hex pairs checked for WCAG AA",

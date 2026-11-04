@@ -472,7 +472,8 @@ def test_one_gate_repair_round(tmp_path: Path) -> None:
 
     fake = FakePilot()
     fake.enqueue("spec", APP_SPEC)
-    fake.enqueue("file_ops", GOOD_OPS, GOOD_OPS)
+    # build, one design (polish) pass for the raw ListTile screen, then one gate repair
+    fake.enqueue("file_ops", GOOD_OPS, GOOD_OPS, GOOD_OPS)
     session = _session(fake, tmp_path, "repair-1")
     result = run_build(
         "tool_library",

@@ -35,12 +35,21 @@ class AppRouter {
 
   late final GoRouter router = _build();
 
+  static String _tabIcon(Object? icon) {
+    if (icon is String && icon.trim().isNotEmpty) return icon;
+    return '•';
+  }
+
   GoRouter _build() {
     final routes = extras;
     KitNavigation.bind(
       [
-        for (final feature in routes.where((item) => item.tab).take(4))
-          KitTab(path: feature.path, label: feature.label, icon: feature.icon),
+        for (final feature in routes.where((item) => item.tab == true).take(4))
+          KitTab(
+            path: feature.path,
+            label: feature.label,
+            icon: _tabIcon(feature.icon),
+          ),
       ],
       home: routes.isNotEmpty ? routes.first.path : '/home',
     );

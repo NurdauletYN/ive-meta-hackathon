@@ -24,6 +24,8 @@ from preflight.types import CheckStatus
 from .branding import apply_branding
 from .prompts import BARE_REQUIREMENTS, CAPSULE_PREFIX
 from .skin import write_skin_from_project
+from .kitlint import kit_violations
+from .palettes import apply_palette, current_palette, palette_from_instruction, pick_palette
 from .tokens import apply_tokens
 from pilot.schemas import Direction
 
@@ -33,6 +35,33 @@ MAX_GATE_REPAIRS = 2
 
 GateFn = Callable[[Path], GateReport]
 CreateFn = Callable[[Path], None]
+
+_KIT_FONTS = """  fonts:
+    - family: KitSans
+      fonts:
+        - asset: lib/core/kit/fonts/DMSans-Regular.ttf
+        - asset: lib/core/kit/fonts/DMSans-SemiBold.ttf
+          weight: 600
+        - asset: lib/core/kit/fonts/DMSans-Bold.ttf
+          weight: 700
+"""
+
+
+def _ensure_kit_pubspec(project: Path) -> None:
+    pub = project / "pubspec.yaml"
+    if not pub.is_file():
+        return
+    text = pub.read_text(encoding="utf-8")
+    if "lib/core/kit/photos/" not in text:
+        needle = "    - lib/app/design_tokens.json"
+        if needle in text:
+            text = text.replace(needle, needle + "\n    - lib/core/kit/photos/")
+        elif "  assets:\n" in text:
+            text = text.replace("  assets:\n", "  assets:\n    - lib/core/kit/photos/\n", 1)
+    if "family: KitSans" not in text and "  uses-material-design: true" in text:
+        text = text.replace("  uses-material-design: true", "  uses-material-design: true\n" + _KIT_FONTS.rstrip(), 1)
+    pub.write_text(text, encoding="utf-8")
+
 
 
 def _schema_loop(session: PilotSession, system: str, user: str, schema: dict, tag: str, model: type) -> Any:
@@ -58,6 +87,7 @@ def apply_spec_assets(project: Path, spec: AppSpec) -> None:
         "slots": {
             "hero_title": spec.onboarding[0].title,
             "hero_body": spec.onboarding[0].body,
+            "hero_hint": " ".join([spec.app_name, *[screen.id.replace("_", " ") for screen in spec.screens]]),
             "slide2_title": spec.onboarding[1].title,
             "slide2_body": spec.onboarding[1].body,
             "slide3_title": spec.onboarding[2].title,
@@ -185,6 +215,44 @@ def _read_relevant_files(project: Path, limit: int = 8) -> str:
     return "\n\n".join(chunks)
 
 
+def _polish(
+    session: PilotSession,
+    system: str,
+    user: str,
+    project: Path,
+    *,
+    allowed_prefixes: list[str] | None,
+) -> list[str]:
+    """One rewrite pass when screens bypass the kit. Never fails the build."""
+    problems = kit_violations(project)
+    if not problems:
+        return []
+    session.emit("stage", name="polish", status="start", issues=len(problems))
+    try:
+        request_and_apply_ops(
+            session,
+            system,
+            user,
+            project,
+            allowed_prefixes=allowed_prefixes,
+            extra_feedback=(
+                "Design pass. These lines bypass the kit and look like stock Material:\n"
+                + "\n".join(problems)
+                + "\n\nRewrite only the affected files with kit widgets and theme colors. "
+                "Keep behavior and the FeatureRoute class.\n\n"
+                f"Current files:\n{_read_feature_files(project)}"
+            ),
+        )
+    except BudgetExceeded:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        session.emit("stage", name="polish", status="skip", error=f"{type(exc).__name__}")
+        return problems
+    remaining = kit_violations(project)
+    session.emit("stage", name="polish", status="ok", issues=len(remaining))
+    return remaining
+
+
 def _read_feature_files(project: Path, limit: int = 12) -> str:
     features = project / "lib" / "app" / "features"
     root = features if features.is_dir() else project / "lib"
@@ -259,6 +327,10 @@ def run_build(
     else:
         raise ValueError("mode must be harness, scaffold_only, or bare")
     choice_name = _apply_choice_tokens(run_dir, project)
+    if not choice_name and mode in ("harness", "scaffold_only"):
+        palette = pick_palette(idea)
+        apply_palette(project, palette)
+        choice_name = palette.name
     if choice_name:
         session.emit("choice", name=choice_name)
     stages["prepare_ms"] = round((time.perf_counter() - t0) * 1000, 1)
@@ -312,12 +384,14 @@ def run_build(
             "lib/app/features/registry.dart (keep FeatureRoute; include a short ProfileScreen in this file; "
             "register browse FIRST as home, then detail, then profile; tab: true with emoji icons). "
             "StatefulWidget + setState on browse and detail. ONLY kit widgets for layout. "
-            "Each file under 70 lines. Terse Dart, no comments. content set; find/replace JSON null. "
+            "Browse screen under 90 lines, other files under 60. Terse Dart, no comments. content set; find/replace JSON null. "
             "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core."
         )
         ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)
         stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
         session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=ops_log.get("applied"))
+        if mode == "harness":
+            _polish(session, system, build_user, project, allowed_prefixes=allowed)
 
         session.emit("stage", name="gate", status="start")
         t0 = time.perf_counter()
@@ -392,6 +466,7 @@ def run_improve(
     *,
     run_dir: Path,
     source_project: Path,
+    capsule: Path | None = None,
     gate_fn: GateFn | None = None,
     build_web: bool = True,
     web_base_href: str | None = None,
@@ -412,6 +487,18 @@ def run_improve(
     if not source_project.is_dir():
         raise FileNotFoundError(f"no app to improve at {source_project}")
     copy_tree(source_project, project)
+    if capsule is not None:
+        kit_src = capsule / "lib" / "core" / "kit"
+        kit_dst = project / "lib" / "core" / "kit"
+        if kit_src.is_dir():
+            if kit_dst.exists():
+                shutil.rmtree(kit_dst)
+            shutil.copytree(kit_src, kit_dst)
+        _ensure_kit_pubspec(project)
+    new_palette = palette_from_instruction(instruction, current_palette(project)) if mode != "bare" else None
+    if new_palette is not None:
+        apply_palette(project, new_palette)
+        session.emit("choice", name=new_palette.name)
     stages["prepare_ms"] = round((time.perf_counter() - t0) * 1000, 1)
     session.emit("stage", name="prepare", status="ok", ms=stages["prepare_ms"])
 
@@ -426,6 +513,14 @@ def run_improve(
         improve_user = (
             f"The app already exists. Apply this change only:\n{instruction}\n\n"
             "Keep kit widgets, in-memory state, and the FeatureRoute class. "
+            "Screens open with HeroHeader and mix FeaturedRow, SectionHeader, ProductGrid, ListSection, StatRow as fits; pick the closest KitPhoto key. "
+            "No text-only lists, no Colors.*. Put money in price:. "
+            + (
+                f"The color palette was just switched to {new_palette.name}; do not change colors. "
+                if new_palette is not None
+                else ""
+            )
+            +
             "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core. "
             "Writes use content; find and replace must be JSON null.\n\n"
             f"Current feature files:\n{current}"
@@ -433,6 +528,8 @@ def run_improve(
         ops_log = request_and_apply_ops(session, system, improve_user, project, allowed_prefixes=allowed)
         stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
         session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=ops_log.get("applied"))
+        if mode == "harness":
+            _polish(session, system, improve_user, project, allowed_prefixes=allowed)
 
         session.emit("stage", name="gate", status="start")
         t0 = time.perf_counter()
