@@ -68,7 +68,8 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | preview tour | done | 2026-11-04 | NEW | Hash routes + studio chips for locked flows; web preview starts at onboarding |
 | studio guided flow | done | 2026-11-04 | NEW | Describe → look → build → check → ship; live SSE stepper; report empty state |
 | studio chat | done | 2026-11-04 | NEW | Single text field; first send builds, later sends call `/api/improve` on the same app |
-| studio grok UI | done | 2026-11-04 | NEW | Dark Grok-style chat: centered empty state, pill composer, send morph, motion. Phone stays. |
+| design engine | done | 2026-11-04 | NEW | 11 curated palettes (WCAG AA, dark and light), kit v2 widgets, 24 Muse Image photos (`scripts/gen_kit_photos.py`), kit lint + one polish pass |
+| projects and versions | done | 2026-11-04 | NEW | `meta.json` per run, project sidebar, version chips (restore = fork), code download zip without secrets |
 | live quality check | done | 2026-11-04 | NEW | 3 Muse Spark builds, $1.50 cap; see docs/quality_check.md |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.

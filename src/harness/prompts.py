@@ -11,11 +11,11 @@ CAPSULE_PREFIX = (
 Capsule API (do not invent other paths):
 - Protected (never write): lib/core/** and capsule.manifest.json.
 - Editable: lib/app/features/** and lib/app/strings.dart (and lib/app/design_tokens.json is applied by the harness, not by you).
-- Extra screens MUST be registered in lib/app/features/registry.dart via extraFeatureRoutes(). The core router already reads that list. Keep the FeatureRoute class. First entry is home at / and /home. Mark up to 4 routes tab: true with an emoji icon for bottom navigation.
+- Extra screens MUST be registered in lib/app/features/registry.dart via extraFeatureRoutes(). The core router already reads that list. Keep the FeatureRoute class with `final bool tab` (default false) and `final String icon`. First entry is home at / and /home. Mark up to 4 routes tab: true with an emoji icon for bottom navigation.
 - Auth: AuthService.deleteAccount(). Billing: BillingService.purchase / restorePurchases. Do not reimplement those services.
 - Settings, paywall, terms, privacy, onboarding scaffolds already exist in lib/core. Do not recreate them.
 - File operations JSON: op write|patch|delete, relative path, content/find/replace (null when unused). One patch replaces the first match only.
-- Layout generated screens with ONLY kit widgets (no raw ListTile / custom Scaffold chrome). In-memory state (StatefulWidget + setState). Seed 8 to 12 realistic items using emoji or IconData; no network images.
+- Design is the product. Layout generated screens with ONLY kit widgets (no ListTile / CircleAvatar / FilterChip / Card / AppBar / raw Scaffold, no Colors.* or Color(0x...)). Every screen is RocketScaffold + KitPage that opens with a HeroHeader and mixes at least 3 kit widgets (FeaturedRow, SectionHeader, ProductGrid, ListSection, StatRow, ProgressRing, SegmentedTabs, ...). Catalogs use ProductGrid + ProductCard with a KitPhoto key. Never a text-only list. In-memory state. Seed 8 to 12 items with believable names and prices; local kit photos only, no network images. Follow the examples below.
 
 Rules: no TODO, no lorem ipsum, no default Flutter demo strings. Dart 3 null-safety. Do not edit pubspec.yaml.
 

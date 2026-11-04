@@ -33,8 +33,17 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: KitSans
+      fonts:
+        - asset: lib/core/kit/fonts/DMSans-Regular.ttf
+        - asset: lib/core/kit/fonts/DMSans-SemiBold.ttf
+          weight: 600
+        - asset: lib/core/kit/fonts/DMSans-Bold.ttf
+          weight: 700
   assets:
     - assets/legal/terms.md
     - assets/legal/privacy.md
     - assets/onboarding/onboarding.json
     - lib/app/design_tokens.json
+    - lib/core/kit/photos/

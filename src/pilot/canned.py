@@ -110,23 +110,45 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final shown = [for (final item in store.items) if (filter == 'All' || item.category == filter) item];
     return RocketScaffold(
       title: 'Browse',
-      body: ListView(
-        padding: EdgeInsets.all(KitTokens.of(context).spacing.md),
+      body: KitPage(
         children: [
-          const HeroHeader(title: 'Block library', subtitle: 'Borrow a tool, return it this week.', emoji: '🧰'),
+          const HeroHeader(
+            title: 'Block library',
+            subtitle: 'Borrow a tool, return it this week.',
+            photo: 'tool',
+            actionLabel: 'Browse all',
+          ),
+          if (shown.length >= 2)
+            FeaturedRow(children: [
+              for (final item in shown.take(3))
+                FeaturedCard(
+                  photo: 'tool',
+                  title: item.title,
+                  subtitle: item.subtitle,
+                  badge: item.category,
+                  onTap: () {
+                    store.selected = item;
+                    context.go('/item');
+                  },
+                ),
+            ]),
           ChipRow(labels: labels, selected: filter, onSelected: (value) => setState(() => filter = value)),
-          SectionTitle('${shown.length} tools'),
-          for (final item in shown)
-            ItemCard(
-              emoji: item.emoji,
-              title: item.title,
-              subtitle: item.subtitle,
-              trailing: KitBadge(label: item.category),
-              onTap: () {
-                store.selected = item;
-                context.go('/item');
-              },
-            ),
+          SectionHeader('${shown.length} tools'),
+          ProductGrid(children: [
+            for (final item in shown)
+              ProductCard(
+                photo: 'tool',
+                title: item.title,
+                subtitle: item.subtitle,
+                badge: item.category,
+                favorite: false,
+                onFavorite: () {},
+                onTap: () {
+                  store.selected = item;
+                  context.go('/item');
+                },
+              ),
+          ]),
         ],
       ),
     );
@@ -161,8 +183,7 @@ class _CreateScreenState extends State<CreateScreen> {
     final space = KitTokens.of(context).spacing;
     return RocketScaffold(
       title: 'List a tool',
-      body: ListView(
-        padding: EdgeInsets.all(space.md),
+      body: KitPage(
         children: [
           const HeroHeader(title: 'Share from your shed', subtitle: 'Neighbors will see this today.', emoji: '✏️'),
           SizedBox(height: space.md),
@@ -207,22 +228,18 @@ class _ItemScreenState extends State<ItemScreen> {
   @override
   Widget build(BuildContext context) {
     final item = CatalogStore.instance.selected;
-    final space = KitTokens.of(context).spacing;
     if (item == null) {
       return const RocketScaffold(title: 'Tool', body: EmptyState(title: 'Pick a tool', body: 'Open browse and choose one.', emoji: '🔎'));
     }
     return RocketScaffold(
       title: item.title,
-      body: ListView(
-        padding: EdgeInsets.all(space.md),
+      body: KitPage(
         children: [
           HeroHeader(title: item.title, subtitle: item.subtitle, emoji: item.emoji),
           SectionTitle('Borrow'),
           QuantityStepper(value: days, onChanged: (value) => setState(() => days = value), min: 1, max: 14),
           PriceTag(text: 'Free for $days day${days == 1 ? '' : 's'}'),
-          SizedBox(height: space.md),
           PrimaryButton(label: item.listed ? 'Request borrow' : 'Returned', onPressed: () => setState(() => item.listed = !item.listed)),
-          SizedBox(height: space.sm),
           SecondaryButton(label: 'Back to browse', onPressed: () => context.go('/browse')),
         ],
       ),
@@ -243,11 +260,9 @@ class ProfileScreen extends StatelessWidget {
     final space = KitTokens.of(context).spacing;
     return RocketScaffold(
       title: 'You',
-      body: ListView(
-        padding: EdgeInsets.all(space.md),
+      body: KitPage(
         children: [
           const HeroHeader(title: 'Your shelf', subtitle: 'What you share on this block.', emoji: '👤'),
-          SizedBox(height: space.md),
           Row(children: [
             Expanded(child: StatTile(label: 'Listed', value: '${store.items.length}', emoji: '📦')),
             SizedBox(width: space.sm),

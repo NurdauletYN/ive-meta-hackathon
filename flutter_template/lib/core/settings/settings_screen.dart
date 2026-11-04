@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/strings.dart';
 import '../auth/auth_service.dart';
 import '../billing/billing_service.dart';
+import '../kit/kit.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, required this.auth, required this.billing});
@@ -13,42 +14,61 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.settingsTitle)),
-      body: ListView(
+    return RocketScaffold(
+      title: AppStrings.settingsTitle,
+      showBottomNav: false,
+      body: KitPage(
         children: [
           if (auth.isDemo || billing.isDemo)
-            ListTile(
-              title: const Text('demo mode'),
-              subtitle: Text(
-                [
-                  if (auth.isDemo) 'Firebase config not supplied; in-memory auth.',
-                  if (billing.isDemo) 'RevenueCat key not supplied; mock billing.',
-                ].join(' '),
-              ),
+            ListSection(
+              children: [
+                ListRow(
+                  title: 'Demo mode',
+                  emoji: '🧪',
+                  subtitle: [
+                    if (auth.isDemo) 'Firebase config not supplied; in-memory auth.',
+                    if (billing.isDemo) 'RevenueCat key not supplied; mock billing.',
+                  ].join(' '),
+                ),
+              ],
             ),
-          ListTile(
-            title: const Text(AppStrings.privacyLabel),
-            onTap: () => context.push('/privacy'),
+          ListSection(
+            title: 'Legal',
+            children: [
+              ListRow(
+                title: AppStrings.privacyLabel,
+                emoji: '🔒',
+                onTap: () => context.push('/privacy'),
+              ),
+              ListRow(
+                title: AppStrings.termsLabel,
+                emoji: '📄',
+                onTap: () => context.push('/terms'),
+              ),
+            ],
           ),
-          ListTile(
-            title: const Text(AppStrings.termsLabel),
-            onTap: () => context.push('/terms'),
-          ),
-          ListTile(
-            title: const Text(AppStrings.restoreLabel),
-            onTap: () => billing.restorePurchases(),
-          ),
-          ListTile(
-            title: const Text(AppStrings.deleteAccountLabel),
-            onTap: () async {
-              await auth.deleteAccount();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Account deleted')),
-                );
-              }
-            },
+          ListSection(
+            title: 'Account',
+            children: [
+              ListRow(
+                title: AppStrings.restoreLabel,
+                emoji: '♻️',
+                onTap: () => billing.restorePurchases(),
+              ),
+              ListRow(
+                title: AppStrings.deleteAccountLabel,
+                emoji: '🗑️',
+                destructive: true,
+                onTap: () async {
+                  await auth.deleteAccount();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Account deleted')),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
         ],
       ),

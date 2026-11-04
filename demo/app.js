@@ -43,6 +43,17 @@ let buildStartedAt = 0;
 let stepStartedAt = 0;
 let elapsedTimer = null;
 let currentBuildStep = null;
+let currentProjectId = null;
+let currentProject = null;
+let initialPhones = "";
+const SUGGESTIONS = [
+  "Make it dark",
+  "Add a featured carousel",
+  "Add a favorites tab",
+  "Add a stats screen with a progress ring",
+  "Try a different color palette",
+  "Add a search bar and filters",
+];
 
 function ticker(text, cls) {
   const el = $("ticker");
@@ -402,6 +413,7 @@ function handle(ev) {
       ticker("Your app is on the phone.", "ok");
       setStatus("Done. Tell me what to change next.");
       setStep("check");
+      renderSuggestions();
     } else {
       ticker(plainError(ev.error || "Build failed"), "fail");
       showError(ev.error || "Build failed");
@@ -420,6 +432,9 @@ function handle(ev) {
     fillEvidence(ev.run_id);
   } else if (type === "choice") {
     ticker(`Applying ${ev.name} colors`, "ok");
+  } else if (type === "project") {
+    currentProjectId = ev.project;
+    refreshProjects();
   }
 }
 
@@ -583,6 +598,7 @@ async function send(ev) {
   if (!text || busy) return;
   $("idea").value = "";
   addBubble("user", text);
+  $("suggest").hidden = true;
   busy = true;
   setRunning(true);
   $("btn-send").disabled = true;
@@ -643,9 +659,195 @@ document.querySelectorAll("[data-hash]").forEach((btn) => {
   btn.addEventListener("click", () => applyTourHash(btn.dataset.hash));
 });
 
+function ago(iso) {
+  const sec = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (!Number.isFinite(sec)) return "";
+  if (sec < 90) return "just now";
+  if (sec < 3600) return `${Math.round(sec / 60)} min ago`;
+  if (sec < 86400) return `${Math.round(sec / 3600)} h ago`;
+  return `${Math.round(sec / 86400)} d ago`;
+}
+
+function setSide(open) {
+  document.body.classList.toggle("side-open", open);
+  $("side").setAttribute("aria-hidden", open ? "false" : "true");
+  $("menu").setAttribute("aria-expanded", open ? "true" : "false");
+  $("side-scrim").hidden = !open;
+}
+
+function renderProjects(list) {
+  const ul = $("project-list");
+  ul.innerHTML = "";
+  $("side-empty").hidden = list.length > 0;
+  for (const project of list) {
+    const li = document.createElement("li");
+    li.className = (project.id === currentProjectId ? "on " : "") + (project.ok ? "" : "fail");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    const swatch = document.createElement("span");
+    swatch.className = "swatch";
+    swatch.style.background = (project.palette && project.palette.primary) || "#333";
+    const title = document.createElement("span");
+    title.className = "p-title";
+    title.textContent = project.title || project.id;
+    const meta = document.createElement("span");
+    meta.className = "p-meta";
+    meta.textContent = `v${project.versions} · ${project.ok ? ago(project.updated) : "last change failed"}`;
+    btn.append(swatch, title, meta);
+    btn.addEventListener("click", () => openProject(project.id));
+    li.appendChild(btn);
+    ul.appendChild(li);
+  }
+}
+
+async function refreshProjects() {
+  try {
+    const list = await api("/api/projects");
+    renderProjects(Array.isArray(list) ? list : []);
+    if (currentProjectId) {
+      const detail = await api(`/api/project/${encodeURIComponent(currentProjectId)}`);
+      if (detail && detail.versions) {
+        currentProject = detail;
+        renderVersions();
+      }
+    }
+    return list;
+  } catch {
+    return [];
+  }
+}
+
+function renderVersions() {
+  const box = $("versions");
+  const versions = (currentProject && currentProject.versions) || [];
+  box.hidden = versions.length === 0;
+  const chips = $("version-chips");
+  chips.innerHTML = "";
+  for (const v of versions) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = `v${v.version}`;
+    btn.title = v.instruction || "";
+    if (v.run_id === currentRunId) btn.className = "on";
+    else if (!v.ok) btn.className = "fail";
+    btn.addEventListener("click", () => showVersion(v));
+    chips.appendChild(btn);
+  }
+  if (currentRunId) $("download").href = `/api/download/${encodeURIComponent(currentRunId)}.zip`;
+  const active = chips.querySelector(".on");
+  if (active) active.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+function showVersion(v) {
+  if (busy) return;
+  currentRunId = v.run_id;
+  if (v.preview) {
+    const kind = v.preview.includes("/build/web/") ? "web" : "skin";
+    showPreview(v.run_id, v.preview, "harness", kind);
+  }
+  renderVersions();
+  ticker(`Viewing v${v.version}. Your next change builds on it.`, "ok");
+}
+
+async function openProject(id) {
+  if (busy) return;
+  let detail;
+  try {
+    detail = await api(`/api/project/${encodeURIComponent(id)}`);
+  } catch {
+    return;
+  }
+  if (!detail || !detail.versions || !detail.versions.length) return;
+  currentProjectId = id;
+  currentProject = detail;
+  const thread = $("thread");
+  thread.innerHTML = "";
+  statusEl = null;
+  document.body.classList.remove("is-empty");
+  for (const v of detail.versions) {
+    addBubble("user", v.instruction || "Build the app");
+    addBubble(
+      "assistant",
+      v.ok ? `v${v.version} is ready.` : "That change did not pass. Try rephrasing it.",
+      v.ok ? "" : "fail",
+    );
+  }
+  const latest = [...detail.versions].reverse().find((v) => v.ok) || detail.versions[detail.versions.length - 1];
+  $("build-stepper").hidden = true;
+  $("build-stats").hidden = true;
+  $("plain-error").hidden = true;
+  showVersion({ ...latest });
+  renderSuggestions();
+  refreshProjects();
+  if (window.innerWidth < 1180) setSide(false);
+}
+
+function newProject() {
+  if (busy) return;
+  currentRunId = null;
+  currentProjectId = null;
+  currentProject = null;
+  statusEl = null;
+  active.clear();
+  const thread = $("thread");
+  thread.innerHTML = '<p class="thread-empty" id="thread-empty">What kind of app do you want?</p>';
+  document.body.classList.add("is-empty");
+  $("phones").innerHTML = initialPhones;
+  previewBase = null;
+  $("versions").hidden = true;
+  $("suggest").hidden = true;
+  $("build-stepper").hidden = true;
+  $("build-stats").hidden = true;
+  $("evidence").hidden = true;
+  $("plain-error").hidden = true;
+  ticker("Type what you want. Keep going to improve it.");
+  renderProjects([]);
+  refreshProjects();
+  $("idea").focus();
+  if (window.innerWidth < 1180) setSide(false);
+}
+
+function renderSuggestions() {
+  const box = $("suggest");
+  if (!currentRunId) {
+    box.hidden = true;
+    return;
+  }
+  const versions = (currentProject && currentProject.versions) || [];
+  const last = versions[versions.length - 1];
+  const dark = Boolean(last && last.palette && last.palette.dark);
+  const pool = SUGGESTIONS.map((text) => (text === "Make it dark" && dark ? "Switch to a light theme" : text));
+  const seed = versions.length % pool.length;
+  const picks = [0, 1, 2, 3].map((i) => pool[(seed + i) % pool.length]);
+  box.innerHTML = "";
+  for (const text of picks) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = text;
+    btn.addEventListener("click", () => {
+      $("idea").value = text;
+      syncComposer();
+      send();
+    });
+    box.appendChild(btn);
+  }
+  box.hidden = false;
+}
+
+$("menu").addEventListener("click", () => setSide(!document.body.classList.contains("side-open")));
+$("side-close").addEventListener("click", () => setSide(false));
+$("side-scrim").addEventListener("click", () => setSide(false));
+$("new-project").addEventListener("click", newProject);
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && document.body.classList.contains("side-open") && window.innerWidth < 1180) setSide(false);
+});
+
 async function boot() {
+  initialPhones = $("phones").innerHTML;
   connectEvents();
   syncComposer();
+  const list = await refreshProjects();
+  if (list.length && window.innerWidth >= 1180) setSide(true);
   $("idea").focus();
 }
 
