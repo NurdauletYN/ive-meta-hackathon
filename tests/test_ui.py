@@ -57,12 +57,14 @@ def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
         assert 'id="ticker"' in page.text
         assert "<summary>" in page.text
         assert 'id="steps"' in page.text
-        assert "draft" in page.text or "looks" in page.text
+        assert "Looks" in page.text
         assert "Offline demo (no API)" in page.text
         assert "Compare without harness" in page.text
         assert 'id="evidence"' in page.text
         assert 'value="muse" selected' in page.text
         assert "Muse Spark" in page.text
+        assert "From idea to TestFlight" in page.text
+        assert "What should this app do?" in page.text
         started = httpx.post(
             f"{base}/api/design",
             json={"idea": "swap books", "pilot": "fake", "run_id": "http-d", "build_web": False},

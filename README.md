@@ -45,7 +45,7 @@ uv run harness gate flutter_template --build-web
 uv run harness ui --port 8765
 ```
 
-Open http://127.0.0.1:8765/ — describe an idea, pick one of three looks, build into the phone frame. Offline: leave the pilot on FakePilot (`fake`). Live Muse Spark needs `META_API_KEY` in `.env` (from `.env.example`) and `--max-usd`.
+Open http://127.0.0.1:8765/ — describe an idea, pick one of three looks, build into the phone. Offline: Model and spend → Offline demo (no API). Live Muse Spark needs `META_API_KEY` in `.env` (from `.env.example`) and a spend cap.
 
 ## Results
 

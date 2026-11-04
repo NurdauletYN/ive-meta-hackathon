@@ -4,81 +4,132 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rocket studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <header class="top">
-      <div>
-        <p class="kicker">ive-meta-hackathon · built this week</p>
-        <h1>Rocket</h1>
-      </div>
-      <p class="ticker" id="ticker">Describe an app. It appears in the phone.</p>
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true">R</span>
+        <span>
+          <strong>Rocket</strong>
+          <em>From idea to TestFlight</em>
+        </span>
+      </a>
+      <p class="ticker" id="ticker">Describe the app. It appears on a phone.</p>
       <p class="cost" id="cost" aria-label="session cost">$0.00</p>
     </header>
+
     <ol class="steps" id="steps" aria-label="progress">
-      <li data-step="idea" class="on">idea</li>
-      <li data-step="looks">looks</li>
-      <li data-step="build">build</li>
-      <li data-step="compare">compare</li>
+      <li data-step="idea" class="on">Idea</li>
+      <li data-step="looks">Looks</li>
+      <li data-step="build">App</li>
+      <li data-step="checks">Checks</li>
+      <li data-step="compare">Compare</li>
     </ol>
 
-    <section class="composer">
-      <label class="field">
-        <span>App idea</span>
-        <textarea id="idea" rows="2" placeholder="Describe the app…"></textarea>
-      </label>
-      <div class="chips" id="ideas" aria-label="sample ideas"></div>
-      <div class="controls">
-        <label class="field inline">
-          <span>Pilot</span>
-          <select id="pilot">
-            <option value="muse" selected>Muse Spark</option>
-            <option value="fake">Offline demo (no API)</option>
-            <option value="baseten">Muse Spark Open</option>
-          </select>
+    <div class="shell">
+      <section class="composer" aria-label="Brief">
+        <p class="eyebrow">Brief</p>
+        <h2>What should this app do?</h2>
+        <p class="lede">
+          Write the idea. Pick a look. Rocket builds a Flutter app, then runs store checks.
+          You stay on the idea and the feel — not auth, billing, or signing.
+        </p>
+        <label class="field">
+          <span>App idea</span>
+          <textarea id="idea" rows="4" placeholder="A quiet notes app for people who share a harbor…"></textarea>
         </label>
-        <label class="field inline">
-          <span>Max USD</span>
-          <input id="max_usd" type="number" min="0" step="0.1" value="3" />
-        </label>
-        <label class="check"><input id="build_web" type="checkbox" checked /> Flutter preview</label>
-        <button type="button" id="btn-design">Propose 3 looks</button>
-        <button type="button" id="btn-build" class="primary">Build</button>
-        <button type="button" id="btn-compare">Compare without harness</button>
-      </div>
-    </section>
-
-    <main class="phones" id="phones">
-      <div class="phone-wrap" id="phone-main">
-        <p class="phone-label">preview</p>
-        <div class="phone">
-          <div class="island"></div>
-          <div class="screen">
-            <p class="empty">Your app will show up here.</p>
-          </div>
-          <div class="home"></div>
+        <div class="chips" id="ideas" aria-label="sample ideas"></div>
+        <div class="actions">
+          <button type="button" id="btn-design">Show three looks</button>
+          <button type="button" id="btn-build" class="primary">Build the app</button>
         </div>
-      </div>
-    </main>
+        <div class="actions secondary-actions">
+          <button type="button" id="btn-compare">Compare without harness</button>
+        </div>
+        <details class="advanced">
+          <summary>Model and spend</summary>
+          <div class="controls">
+            <label class="field inline">
+              <span>Pilot</span>
+              <select id="pilot">
+                <option value="muse" selected>Muse Spark</option>
+                <option value="fake">Offline demo (no API)</option>
+                <option value="baseten">Muse Spark Open</option>
+              </select>
+            </label>
+            <label class="field inline">
+              <span>Spend cap (USD)</span>
+              <input id="max_usd" type="number" min="0" step="0.1" value="3" />
+            </label>
+            <label class="check"><input id="build_web" type="checkbox" checked /> Flutter preview in the phone</label>
+          </div>
+        </details>
+      </section>
+
+      <main class="stage">
+        <p class="eyebrow">On a phone</p>
+        <div class="phones" id="phones">
+          <div class="phone-wrap" id="phone-main">
+            <p class="phone-label">preview</p>
+            <div class="phone">
+              <div class="island"></div>
+              <div class="screen">
+                <div class="empty-hero">
+                  <p class="empty">Your app will show up here.</p>
+                  <p class="empty-sub">Three looks first, then a real Flutter build.</p>
+                </div>
+              </div>
+              <div class="home"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
 
     <section id="evidence" class="evidence" hidden>
-      <h2>Evidence</h2>
-      <p id="evidence-meta" class="evidence-meta"></p>
-      <h3>Gate steps</h3>
-      <ul id="evidence-steps" class="rows"></ul>
-      <h3>Preflight</h3>
-      <ul id="evidence-preflight" class="rows"></ul>
+      <div class="evidence-head">
+        <p class="eyebrow">Store checks</p>
+        <h2>Is this ready to ship?</h2>
+        <p id="evidence-meta" class="evidence-meta"></p>
+      </div>
+      <div class="evidence-grid">
+        <div>
+          <h3>Gate</h3>
+          <ul id="evidence-steps" class="rows"></ul>
+        </div>
+        <div>
+          <h3>Preflight</h3>
+          <ul id="evidence-preflight" class="rows"></ul>
+        </div>
+      </div>
       <p id="evidence-ship" class="evidence-meta"></p>
+      <aside class="next">
+        <p class="eyebrow">Next</p>
+        <h3>Store listing</h3>
+        <p>
+          Icon, listing copy, and a privacy template (not legal advice) are prepared by
+          <code>harness storepack</code>. TestFlight upload is <code>harness ship</code> —
+          it needs your Apple keys on this machine, never in this window.
+        </p>
+      </aside>
     </section>
 
     <section id="compare-results" class="evidence" hidden>
-      <h2>Compare without harness</h2>
+      <p class="eyebrow">Compare without harness</p>
+      <h2>Same idea, with and without Rocket</h2>
       <p class="evidence-meta">From <code>harness report</code> (<code>ivebench/results/results.md</code>). Counts only.</p>
       <div id="compare-table" class="md-tables"></div>
     </section>
 
     <details class="details" id="details">
-      <summary>Details · files and log</summary>
+      <summary>Build log and files</summary>
       <div class="details-grid">
         <div>
           <h2>Files</h2>
@@ -93,7 +144,8 @@
     </details>
 
     <footer>
-      Capsule auth/billing are in-memory mocks. Preflight is an engineering signal, not legal advice.
+      Auth and billing stay in demo until you add your own Firebase or RevenueCat keys.
+      Preflight is an engineering gate, not App Review, and not legal advice.
       This UI is not the Ive product.
       Built with Muse Spark Open.
     </footer>
