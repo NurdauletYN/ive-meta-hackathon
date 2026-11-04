@@ -325,5 +325,5 @@ def canned_pilot() -> FakePilot:
     fake = FakePilot(cached_tokens=64)
     fake.enqueue("design", DIRECTIONS)
     fake.enqueue("spec", APP_SPEC, APP_SPEC)
-    fake.enqueue("file_ops", FILE_OPS, FILE_OPS, BARE_OPS)
+    fake.enqueue("file_ops", FILE_OPS, FILE_OPS, BARE_OPS, FILE_OPS)
     return fake

@@ -33,9 +33,11 @@ let cost = 0;
 let tokensIn = 0;
 let tokensOut = 0;
 let designRun = null;
+let currentRunId = null;
+let statusEl = null;
+let busy = false;
 let es = null;
 let repairSeen = 0;
-let lookChosen = false;
 let previewBase = null;
 let buildStartedAt = 0;
 let stepStartedAt = 0;
@@ -77,25 +79,32 @@ function setUsedModel(pilot) {
   else el.textContent = "";
 }
 
-function enableBuild(on) {
-  lookChosen = !!on;
-  $("btn-build").disabled = !lookChosen;
+function addBubble(role, text, cls) {
+  const empty = $("thread-empty");
+  if (empty) empty.remove();
+  const div = document.createElement("div");
+  div.className = "bubble " + role + (cls ? " " + cls : "");
+  div.textContent = text;
+  $("thread").appendChild(div);
+  div.scrollIntoView({ block: "end" });
+  return div;
 }
 
-function resetSession() {
-  cost = 0;
-  tokensIn = 0;
-  tokensOut = 0;
+function setStatus(text, cls) {
+  if (!statusEl) statusEl = addBubble("assistant", text, cls);
+  else {
+    statusEl.textContent = text;
+    statusEl.className = "bubble assistant" + (cls ? " " + cls : "");
+  }
+}
+
+function resetTurn() {
   repairSeen = 0;
-  addCost(0);
-  addTokens(0, 0);
   files.clear();
   $("log").innerHTML = "";
   $("files").innerHTML = "";
   $("file-view").textContent = "Select a file.";
   $("evidence").hidden = true;
-  $("compare-results").hidden = true;
-  $("ship-panel").hidden = true;
   $("evidence-steps").innerHTML = "";
   $("evidence-preflight").innerHTML = "";
   $("evidence-meta").textContent = "";
@@ -192,7 +201,6 @@ function setStep(name) {
   for (const li of steps.querySelectorAll("li")) {
     li.classList.toggle("on", li.dataset.step === name);
   }
-  if (name === "ship") $("ship-panel").hidden = false;
 }
 
 function setLabel(wrap, text) {
@@ -349,24 +357,25 @@ function handle(ev) {
   } else if (type === "direction") {
     showDirection(ev);
   } else if (type === "picked") {
-    enableBuild(true);
-    ticker(`Using ${ev.name}. Build the app when you’re ready.`, "ok");
-    for (const wrap of document.querySelectorAll(".phone-wrap")) wrap.classList.remove("picked");
-    const card = document.getElementById(`dir-${ev.n}`);
-    if (card) card.classList.add("picked");
+    ticker(`Using ${ev.name}.`, "ok");
   } else if (type === "done") {
     log(`${ev.run_id} done ${ev.ok ? "ok" : "fail"}`, ev.ok ? "ok" : "fail");
     if (ev.preview) showPreview(ev.run_id, ev.preview, ev.mode, ev.kind);
     if (ev.ok) {
       setBuildStep("ready");
       skeletonPhone(false);
+      currentRunId = ev.run_id;
       ticker("Your app is on the phone.", "ok");
+      setStatus("Done. Tell me what to change next.");
       setStep("check");
     } else {
       ticker(plainError(ev.error || "Build failed"), "fail");
       showError(ev.error || "Build failed");
+      setStatus(plainError(ev.error || "That didn’t work. Try again."), "fail");
       setBuildStep(currentBuildStep || "checks", { fail: true });
     }
+    busy = false;
+    $("btn-send").disabled = false;
     stopElapsed();
     const wrap = document.getElementById(`phone-${ev.run_id}`);
     if (wrap) {
@@ -522,52 +531,6 @@ function isEmptySweep(md) {
   return !md || /passed 0\/0|0\/0/.test(md) || !/\|\s*(pass|quality_fail|infra_fail)/i.test(md);
 }
 
-async function showHarnessReport() {
-  $("compare-results").hidden = false;
-  const empty = $("compare-empty");
-  const table = $("compare-table");
-  empty.hidden = true;
-  table.innerHTML = "";
-  try {
-    const res = await fetch("/api/results");
-    if (!res.ok) {
-      empty.hidden = false;
-      empty.textContent = "No sweep results exist yet.";
-      return;
-    }
-    const md = await res.text();
-    if (isEmptySweep(md)) {
-      empty.hidden = false;
-      empty.textContent = "No sweep results exist yet.";
-      return;
-    }
-    empty.hidden = true;
-    renderMarkdownTables(md, table);
-  } catch (err) {
-    empty.hidden = false;
-    empty.textContent = "No sweep results exist yet.";
-    log(String(err), "fail");
-  }
-}
-
-async function pickDirection(index, card) {
-  if (!designRun) return;
-  const picked = await api("/api/pick", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ run_id: designRun, n: index }),
-  });
-  if (!picked.ok) {
-    ticker(picked.error || "pick failed", "fail");
-    return;
-  }
-  enableBuild(true);
-  for (const wrap of document.querySelectorAll(".phone-wrap")) wrap.classList.remove("picked");
-  card.classList.add("picked");
-  const name = picked.choice?.direction?.name;
-  ticker(`Using ${name || "this look"}. Build the app when you’re ready.`, "ok");
-}
-
 function showDirection(ev) {
   const wrap = document.getElementById(`dir-${ev.index}`);
   if (!wrap) return;
@@ -575,104 +538,74 @@ function showDirection(ev) {
   if (ev.preview) setScreen(wrap.querySelector(".screen"), iframe(ev.preview));
 }
 
-async function useDefaultLook() {
-  if (designRun) {
-    const card = document.getElementById("dir-1");
-    if (card) await pickDirection(1, card);
-  }
-  enableBuild(true);
-  ticker("Using the default look. Build when you’re ready.", "ok");
-  setStep("looks");
+function slug(prefix) {
+  return `${prefix}-${Date.now().toString(36).slice(-5)}`;
 }
 
-async function run(kind, extra) {
-  const body = { ...payload(), ...extra };
-  if (kind === "design") {
-    body.run_id = body.run_id || slug("d");
-    designRun = body.run_id;
-    active.clear();
-    active.add(body.run_id);
-    resetSession();
-    mountDirectionSlots();
-    setStep("looks");
-    ticker("Sketching three looks…", "busy");
-  }
-  if (kind === "build") {
-    if (!lookChosen) {
-      ticker("Choose a look first, or use the default look.", "fail");
-      return;
-    }
-    body.mode = extra.mode || "harness";
-    body.run_id = extra.run_id || slug(body.mode);
-    if (designRun) body.choice_from = designRun;
-    active.clear();
-    active.add(body.run_id);
-    resetSession();
-    setUsedModel(body.pilot);
-    $("phones").innerHTML = "";
-    const card = phoneCard({ id: `phone-${body.run_id}`, label: body.mode, small: false });
-    $("phones").appendChild(card);
-    setScreen(card.querySelector(".screen"), waiting("Building your app…"));
-    skeletonPhone(true);
-    $("build-stepper").hidden = false;
-    $("build-stats").hidden = false;
-    buildStartedAt = Date.now();
-    setBuildStep("understand");
-    setStep("build");
-    ticker("Building the app onto the phone…", "busy");
-  }
+async function send(ev) {
+  if (ev) ev.preventDefault();
+  const text = $("idea").value.trim();
+  if (!text || busy) return;
+  $("idea").value = "";
+  addBubble("user", text);
+  busy = true;
+  $("btn-send").disabled = true;
+  const improving = Boolean(currentRunId);
+  statusEl = addBubble("assistant", improving ? "Improving the app…" : "Building the app…", "busy");
+  const kind = improving ? "improve" : "build";
+  const runId = slug(improving ? "i" : "h");
+  const body = {
+    ...payload(),
+    idea: text,
+    mode: "harness",
+    run_id: runId,
+  };
+  if (improving) body.from_run = currentRunId;
+  active.clear();
+  active.add(runId);
+  resetTurn();
+  setUsedModel(body.pilot);
+  $("phones").innerHTML = "";
+  const card = phoneCard({ id: `phone-${runId}`, label: improving ? "update" : "preview", small: false });
+  $("phones").appendChild(card);
+  setScreen(card.querySelector(".screen"), waiting(improving ? "Updating…" : "Building…"));
+  skeletonPhone(true);
+  $("build-stepper").hidden = false;
+  $("build-stats").hidden = false;
+  setBuildStep(improving ? "writing" : "understand");
+  ticker(improving ? "Updating the app…" : "Building the app…", "busy");
   const started = await api(`/api/${kind}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!started.ok) {
+    busy = false;
+    $("btn-send").disabled = false;
     ticker(plainError(started.error || "failed to start"), "fail");
     showError(started.error || "failed to start");
+    setStatus(plainError(started.error || "Could not start."), "fail");
     log(started.error || "failed to start", "fail");
     skeletonPhone(false);
     return;
   }
-  log(`started ${kind} ${started.run_id || (started.run_ids || []).join(",")}`);
+  log(`started ${kind} ${started.run_id}`);
 }
 
-function slug(prefix) {
-  return `${prefix}-${Date.now().toString(36).slice(-5)}`;
-}
-
-$("btn-design").addEventListener("click", () => run("design", { run_id: slug("d") }));
-$("btn-build").addEventListener("click", () => run("build", { mode: "harness" }));
-$("btn-default-look").addEventListener("click", () => useDefaultLook());
-$("btn-compare").addEventListener("click", () => showHarnessReport());
+$("chat-form").addEventListener("submit", send);
+$("idea").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter" && !ev.shiftKey) {
+    ev.preventDefault();
+    send();
+  }
+});
 
 document.querySelectorAll("[data-hash]").forEach((btn) => {
   btn.addEventListener("click", () => applyTourHash(btn.dataset.hash));
 });
 
-document.querySelectorAll("#steps li").forEach((li) => {
-  li.addEventListener("click", () => {
-    const name = li.dataset.step;
-    setStep(name);
-    if (name === "check") $("evidence").hidden = false;
-    if (name === "ship") $("ship-panel").hidden = false;
-  });
-});
-
 async function boot() {
   connectEvents();
-  const ideas = await api("/api/ideas");
-  const box = $("ideas");
-  for (const idea of ideas) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.textContent = idea.title;
-    btn.addEventListener("click", () => {
-      $("idea").value = idea.blurb;
-      for (const other of box.querySelectorAll("button")) other.classList.remove("active");
-      btn.classList.add("active");
-    });
-    box.appendChild(btn);
-  }
 }
 
 boot().catch((err) => ticker(String(err), "fail"));

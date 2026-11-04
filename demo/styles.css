@@ -136,6 +136,74 @@ body {
   margin-top: 1.75rem;
   align-items: start;
 }
+.chat-shell {
+  grid-template-columns: minmax(0, 1fr) 320px;
+  min-height: calc(100vh - 8rem);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+.composer.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 28rem;
+  max-height: calc(100vh - 8rem);
+}
+.thread {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-bottom: 0.75rem;
+}
+.thread-empty {
+  margin: auto 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+.bubble {
+  max-width: 92%;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.bubble.user {
+  align-self: flex-end;
+  background: var(--ink);
+  color: var(--bg);
+}
+.bubble.assistant {
+  align-self: flex-start;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.bubble.busy { color: var(--wait); }
+.bubble.fail { border-color: var(--bad); color: var(--bad); }
+.chat-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+.chat-form textarea {
+  flex: 1;
+  min-height: 2.75rem;
+  max-height: 8rem;
+  box-shadow: none;
+  resize: none;
+}
+.chat-form .primary { flex: 0 0 auto; }
 @media (max-width: 900px) {
   .shell { grid-template-columns: 1fr; }
   .stage { order: -1; }
