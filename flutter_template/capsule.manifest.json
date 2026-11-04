@@ -26,6 +26,36 @@
       "author": "human harness",
       "date": "2026-11-04",
       "reason": "deleteAccount() clears userData so in-memory app data for that user is empty after deletion."
+    },
+    {
+      "path": "lib/core/auth/auth_service.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Added signUp and isDemo so a config-gated Firebase adapter can share the interface."
+    },
+    {
+      "path": "lib/core/auth/auth_factory.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Picks FirebaseAuthService only when user config files exist; otherwise InMemoryAuthService (demo mode)."
+    },
+    {
+      "path": "lib/core/auth/firebase_auth_service.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "FirebaseAuthService behind AuthService. Real SDK calls only through an injected gateway."
+    },
+    {
+      "path": "lib/core/settings/settings_screen.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Shows a demo mode label when auth is the in-memory fallback."
+    },
+    {
+      "path": "lib/main.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "Creates AuthService through the config-gated factory at startup."
     }
   ]
 }

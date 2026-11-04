@@ -55,6 +55,7 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `src/preflight` +4 checks | done | 2026-11-04 | NEW | smoke_tests_pass, account_deletion_erases_data, home_not_webview, remote_code |
 | `src/harness/sameness.py` | done | 2026-11-04 | NEW | Pairwise Jaccard 5-grams over lib/app; report only |
 | `scaffold_only` mode | done | 2026-11-04 | NEW | Capsule + guard, one build call, zero repair rounds |
+| `lib/core/auth/firebase_*` | done | 2026-11-04 | NEW | Config-gated FirebaseAuthService; fake gateway tests; no live calls |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 

@@ -17,6 +17,11 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text(AppStrings.settingsTitle)),
       body: ListView(
         children: [
+          if (auth.isDemo)
+            const ListTile(
+              title: Text('demo mode'),
+              subtitle: Text('Firebase config not supplied; in-memory auth.'),
+            ),
           ListTile(
             title: const Text(AppStrings.privacyLabel),
             onTap: () => context.push('/privacy'),
