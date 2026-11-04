@@ -17,6 +17,7 @@ from pilot.protocol import Usage
 from pilot.session import PilotSession
 from pilot.usage_log import append_usage
 
+from .launcher_icons import Runner, apply_launcher_icons
 from .scan import read_app_name, scan_app
 
 LISTING_SCHEMA = {
@@ -131,6 +132,7 @@ def build_storepack(
     image_fn: ImageFn | None = None,
     app_name: str | None = None,
     icon_mock: bool | None = None,
+    launcher_runner: Runner | None = None,
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     name = app_name or read_app_name(project)
@@ -174,6 +176,9 @@ def build_storepack(
             "raw": raw_path.name,
             "1024": [w, h],
             "512": [w512, h512],
+            "launcher_icons": apply_launcher_icons(
+                project, p1024, runner=launcher_runner
+            ),
         }
 
     zip_path = out_dir / "storepack.zip"
