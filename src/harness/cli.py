@@ -16,7 +16,7 @@ from harness.build import run_build
 from harness.design import pick_direction, run_design
 from harness.gate import gate_json, run_gate
 from harness.serve import serve
-from harness.report import write_results
+from harness.report import write_results, write_results_html
 from harness.ship import ShipError, run_ship
 from harness.sweep import DirtyTreeError, load_ideas, run_sweep
 from harness.ui import serve_ui
@@ -73,6 +73,7 @@ def main(argv: list[str] | None = None) -> None:
     report = sub.add_parser("report", help="Write counts-only results.md from a sweep folder")
     report.add_argument("--in", dest="indir", type=Path, default=ROOT / "ivebench" / "results" / "sweep")
     report.add_argument("--out", dest="outfile", type=Path, default=ROOT / "ivebench" / "results" / "results.md")
+    report.add_argument("--html", nargs="?", const="DEFAULT", default=None, help="Also write a static HTML page (GitHub Pages)")
 
     ship = sub.add_parser("ship", help="Build an IPA and upload to App Store Connect / TestFlight")
     ship.add_argument("project_dir", type=Path)
@@ -177,6 +178,14 @@ def _dispatch(args: argparse.Namespace) -> None:
     if args.command == "report":
         path = write_results(args.indir, args.outfile)
         print(path.read_text(encoding="utf-8"))
+        if args.html is not None:
+            html_path = (
+                ROOT / "ivebench" / "results" / "index.html"
+                if args.html == "DEFAULT"
+                else Path(args.html)
+            )
+            wrote = write_results_html(args.indir, html_path)
+            print(f"wrote {wrote}")
         return
 
     if args.command == "usage-report":

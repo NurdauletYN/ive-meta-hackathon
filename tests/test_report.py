@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from harness.report import render_results, write_results
+from harness.report import render_results, render_results_html, write_results, write_results_html
 
 
 def _row(**kwargs):
@@ -70,6 +70,17 @@ def test_skips_rows_without_classified_outcome(tmp_path: Path) -> None:
     text = dest.read_text(encoding="utf-8")
     assert "should-not-appear" not in text
     assert "0/0" in text
+
+
+def test_html_report_has_tables_and_no_keys(tmp_path: Path) -> None:
+    html = render_results_html([_row(), _row(run_id="sweep-muse-tool_library-bare", mode="bare", outcome="infra_fail", ok=False, error="timeout")])
+    assert "<table>" in html
+    assert "muse" in html
+    assert "infra_fail" in html or "Infra" in html
+    assert "API_KEY" not in html
+    assert "BEGIN PRIVATE" not in html
+    dest = write_results_html(tmp_path, tmp_path / "index.html")
+    assert dest.is_file()
 
 
 def test_write_results_from_files(tmp_path: Path) -> None:

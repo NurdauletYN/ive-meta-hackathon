@@ -50,6 +50,8 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `docs/VIDEO_SCRIPT.md` | done | 2026-11-04 | NEW | 3-minute outline with `{RESULT_*}` placeholders |
 | `LICENSE` | done | 2026-11-04 | NEW | Draft MIT; choice pending owner confirmation |
 | `scripts/prepublish_check.sh` | done | 2026-11-04 | NEW | Gitleaks, secret filenames, tests, gate, clone, README links |
+| `demo/` studio polish | done | 2026-11-04 | NEW | Evidence panel, Muse Spark default, compare-without-harness, 960px |
+| `harness report --html` | done | 2026-11-04 | NEW | Static GitHub Pages page; no keys, no live calls |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 

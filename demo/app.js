@@ -1,9 +1,15 @@
 const $ = (id) => document.getElementById(id);
 const files = new Map();
 const active = new Set();
+const MODELS = {
+  muse: "muse-spark-1.3",
+  fake: "FakePilot (offline)",
+  baseten: "meta-models/muse-spark-open-1026",
+};
 let cost = 0;
 let designRun = null;
 let es = null;
+let repairSeen = 0;
 
 function ticker(text, cls) {
   const el = $("ticker");
@@ -25,12 +31,18 @@ function addCost(value) {
 
 function resetSession() {
   cost = 0;
+  repairSeen = 0;
   addCost(0);
   files.clear();
   $("log").innerHTML = "";
-  $("preflight").innerHTML = "";
   $("files").innerHTML = "";
   $("file-view").textContent = "Select a file.";
+  $("evidence").hidden = true;
+  $("compare-results").hidden = true;
+  $("evidence-steps").innerHTML = "";
+  $("evidence-preflight").innerHTML = "";
+  $("evidence-meta").textContent = "";
+  $("evidence-ship").textContent = "";
 }
 
 function setScreen(el, inner) {
@@ -164,16 +176,11 @@ function handle(ev) {
     });
     $("files").prepend(li);
   } else if (type === "preflight") {
-    let li = document.querySelector(`[data-check="${ev.check_id}"]`);
-    if (!li) {
-      li = document.createElement("li");
-      li.dataset.check = ev.check_id;
-      $("preflight").appendChild(li);
-    }
     const status = String(ev.status || "").split(".").pop();
-    li.className = status;
-    li.textContent = `${ev.check_id} · ${status}`;
+    appendRow($("evidence-preflight"), ev.check_id, status, ev.message || status);
+    $("evidence").hidden = false;
   } else if (type === "repair") {
+    repairSeen = Math.max(repairSeen, Number(ev.round) || 0);
     ticker(`Repairing (round ${ev.round})…`, "busy");
     log(`repair round ${ev.round}`, "fail");
   } else if (type === "preview") {
@@ -196,6 +203,8 @@ function handle(ev) {
       const slot = wrap.querySelector(".badge-slot");
       if (slot) slot.replaceChildren(badge(!!ev.ok));
     }
+    fillEvidence(ev.run_id);
+    maybeFillCompare();
   } else if (type === "choice") {
     ticker(`Applying ${ev.name} colors`, "ok");
   }
@@ -237,10 +246,133 @@ function mountDirectionSlots() {
 function mountCompare(ids) {
   $("phones").innerHTML = "";
   for (const id of ids) {
-    const mode = id.endsWith("bare") ? "bare" : "harness";
+    const mode = id.endsWith("bare") ? "without harness" : "with harness";
     const card = phoneCard({ id: `phone-${id}`, label: mode, small: true });
     $("phones").appendChild(card);
     setScreen(card.querySelector(".screen"), waiting("Building…"));
+  }
+}
+
+function appendRow(list, name, status, detail) {
+  if (!list) return;
+  let li = [...list.children].find((el) => el.dataset.row === name);
+  if (!li) {
+    li = document.createElement("li");
+    li.dataset.row = name;
+    list.appendChild(li);
+  }
+  const ok = status === true || status === "PASS" || status === "ok";
+  const fail = status === false || status === "FAIL" || status === "fail";
+  li.className = fail ? "fail" : ok ? "ok" : String(status || "WARN");
+  const mark = document.createElement("span");
+  mark.className = "mark";
+  mark.textContent = fail ? "FAIL" : ok ? "PASS" : String(status || "WARN");
+  li.replaceChildren(mark, document.createTextNode(`${name}${detail ? " — " + detail : ""}`));
+}
+
+function modelName(pilot) {
+  return MODELS[pilot] || pilot || "unknown";
+}
+
+async function fillEvidence(runId) {
+  const panel = $("evidence");
+  panel.hidden = false;
+  let job = {};
+  try {
+    const payload = await api("/api/job");
+    const jobs = payload.jobs || [];
+    job = jobs.find((j) => j.run_id === runId) || payload;
+  } catch {
+    job = {};
+  }
+  const summary = job.summary || {};
+  const tokens = summary.tokens || {};
+  const pilot = job.pilot || $("pilot").value;
+  const repairs = summary.repair_rounds ?? repairSeen;
+  const costUsd = tokens.est_cost_usd ?? cost;
+  $("evidence-meta").textContent =
+    `pilot ${pilot} · model ${modelName(pilot)} · cost $${Number(costUsd || 0).toFixed(4)} · ` +
+    `tokens in ${tokens.input || 0} / cached ${tokens.cached || 0} / out ${tokens.output || 0} · ` +
+    `repair rounds ${repairs ?? 0}`;
+  const steps = summary.gate_steps || [];
+  const stepList = $("evidence-steps");
+  if (steps.length) {
+    stepList.innerHTML = "";
+    for (const step of steps) {
+      appendRow(stepList, step.name || "step", step.ok, step.ok ? "ok" : "failed");
+    }
+  }
+  const checks = summary.preflight || [];
+  if (checks.length) {
+    const list = $("evidence-preflight");
+    list.innerHTML = "";
+    for (const check of checks) {
+      const status = String(check.status || "").split(".").pop();
+      appendRow(list, check.id || check.check_id || "check", status, check.message || "");
+    }
+  }
+  const shipEl = $("evidence-ship");
+  shipEl.textContent = "ship report: none";
+  try {
+    const res = await fetch(`/runs/${encodeURIComponent(runId)}/project/ship_report.json`);
+    if (res.ok) {
+      const report = await res.json();
+      const blob = JSON.stringify(report);
+      if (blob.includes("ASC_") || blob.includes("BEGIN PRIVATE")) {
+        shipEl.textContent = "ship report: present (redacted display)";
+      } else {
+        shipEl.textContent = `ship report: ${report.outcome || report.ok}`;
+      }
+    }
+  } catch {
+    /* no ship report */
+  }
+}
+
+function renderMarkdownTables(md, dest) {
+  dest.innerHTML = "";
+  const chunks = md.split(/\n{2,}/);
+  for (const chunk of chunks) {
+    const lines = chunk.trim().split("\n");
+    if (lines.length >= 2 && lines[0].startsWith("|") && lines[1].includes("---")) {
+      const table = document.createElement("table");
+      lines.forEach((line, i) => {
+        const cells = line.replace(/^\||\|$/g, "").split("|").map((c) => c.trim());
+        if (i === 1 && cells.every((c) => /^:?-+:?$/.test(c))) return;
+        const tr = document.createElement("tr");
+        for (const cell of cells) {
+          const el = document.createElement(i === 0 ? "th" : "td");
+          el.textContent = cell;
+          tr.appendChild(el);
+        }
+        table.appendChild(tr);
+      });
+      dest.appendChild(table);
+    } else if (chunk.trim()) {
+      const p = document.createElement("p");
+      p.textContent = chunk.trim();
+      dest.appendChild(p);
+    }
+  }
+}
+
+async function maybeFillCompare() {
+  const payload = await api("/api/job").catch(() => null);
+  const jobs = (payload && payload.jobs) || [];
+  const compare = jobs.filter((j) => String(j.run_id || "").endsWith("-harness") || String(j.run_id || "").endsWith("-bare"));
+  if (compare.length < 2) return;
+  if (compare.some((j) => j.status === "running")) return;
+  $("compare-results").hidden = false;
+  try {
+    const res = await fetch("/api/results");
+    if (!res.ok) {
+      $("compare-table").textContent = "results.md not found. Run harness report.";
+      return;
+    }
+    const md = await res.text();
+    renderMarkdownTables(md, $("compare-table"));
+  } catch (err) {
+    $("compare-table").textContent = String(err);
   }
 }
 

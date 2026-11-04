@@ -119,7 +119,14 @@ class HarnessUI:
             run_id = str(payload.get("run_id") or "").strip() or kind
             if not _RUN_ID.match(run_id):
                 return {"ok": False, "error": "run_id must be 1-64 letters, digits, dot, underscore, or dash"}
-            job = {"status": "running", "kind": kind, "run_id": run_id, "error": None, "summary": None}
+            job = {
+                "status": "running",
+                "kind": kind,
+                "run_id": run_id,
+                "error": None,
+                "summary": None,
+                "pilot": payload.get("pilot"),
+            }
             self.jobs[run_id] = job
             self.job = job
         thread = threading.Thread(target=self._run, args=(kind, payload, run_id), daemon=True)
@@ -249,6 +256,7 @@ class HarnessUI:
             "run_id": run_id,
             "error": error,
             "summary": summary,
+            "pilot": payload.get("pilot"),
         }
         with self._lock:
             self.jobs[run_id] = job
@@ -316,6 +324,13 @@ def make_handler(app: HarnessUI):
                 return
             if path == "/api/ideas":
                 self._json(200, app.ideas())
+                return
+            if path == "/api/results":
+                dest = app.root / "ivebench" / "results" / "results.md"
+                if not dest.is_file():
+                    self._json(404, {"ok": False, "error": "results.md not found"})
+                    return
+                self._send(200, dest.read_bytes(), "text/markdown; charset=utf-8")
                 return
             if path == "/api/runs":
                 self._json(200, app.list_runs())

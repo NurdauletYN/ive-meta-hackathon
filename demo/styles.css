@@ -17,7 +17,7 @@ html, body {
   margin: 0; min-height: 100%; background: var(--bg); color: var(--ink);
   font-family: var(--sans);
 }
-body { padding: 1rem 1.25rem 3rem; max-width: 1100px; margin: 0 auto; }
+body { padding: 1rem 1.25rem 3rem; max-width: 960px; margin: 0 auto; }
 .top {
   display: grid; grid-template-columns: auto 1fr auto;
   gap: 1rem; align-items: center;
@@ -38,6 +38,24 @@ h1 { margin: 0.15rem 0 0; font-size: 1.8rem; letter-spacing: -0.04em; }
 .steps li.on { color: var(--ink); border-color: var(--accent); }
 .badge.draft { background: #3d2e14; color: var(--wait); }
 .composer { margin: 1rem 0 1.5rem; }
+.field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.field.inline { flex-direction: row; align-items: center; gap: 0.45rem; }
+.field.inline select, .field.inline input { text-transform: none; letter-spacing: 0; }
+.evidence { margin: 1.5rem auto 0; max-width: 960px; }
+.evidence[hidden] { display: none; }
+.evidence h2, .evidence h3 {
+  margin: 0.8rem 0 0.4rem; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+}
+.evidence-meta { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+.rows { list-style: none; padding: 0; margin: 0 0 0.8rem; }
+.rows li { display: flex; gap: 0.6rem; padding: 0.28rem 0; border-bottom: 1px solid var(--line); font-size: 0.88rem; }
+.rows li .mark { font-family: var(--mono); min-width: 3.2rem; }
+.rows li.ok .mark, .rows li.PASS .mark { color: var(--ok); }
+.rows li.fail .mark, .rows li.FAIL .mark { color: var(--bad); }
+.rows li.WARN .mark { color: var(--wait); }
+.md-tables table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.6rem 0 1rem; }
+.md-tables th, .md-tables td { border: 1px solid var(--line); padding: 0.35rem 0.5rem; text-align: left; }
+.md-tables th { color: var(--muted); font-weight: 600; }
 textarea, select, input, button {
   font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line);
   padding: 0.55rem 0.7rem; border-radius: 8px;
