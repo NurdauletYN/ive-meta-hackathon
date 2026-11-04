@@ -37,7 +37,7 @@ uv run pytest
 uv run harness gate flutter_template --build-web
 ```
 
-`pytest` covers FakePilot, guard, preflight, ship (fake subprocess; no Apple), sweep (fake), report. `harness gate` runs `flutter analyze`, `flutter build web`, and preflight. Do **not** run `harness sweep` unless you intend a live, budgeted eval.
+`pytest` covers FakePilot, guard, preflight, ship (fake subprocess; no Apple), storepack (FakePilot; mock icon), sweep (fake), report. `harness gate` runs `flutter analyze`, `flutter build web`, and preflight. Do **not** run `harness sweep` unless you intend a live, budgeted eval.
 
 ## Studio
 
@@ -92,8 +92,10 @@ Python (see `uv.lock`): httpx, pydantic, python-dotenv, pillow; pytest and pre-c
 | `src/pilot/` | `complete_json` protocol, Fake / Muse Spark / OpenAI-compat |
 | `src/preflight/` | Deterministic store-readiness checks |
 | `src/meta_client/` | Muse Spark + Muse Image adapters |
+| `src/storepack/` | Listing copy, privacy template, icon zip |
 | `demo/` | Studio static files |
 | `docs/ship.md` | TestFlight prerequisites and what is not automated |
+| `docs/storepack.md` | Store pack commands; privacy is a template, not legal advice |
 | `docs/preflight.md` | Check descriptions (not legal advice) |
 | `METAUSE.md` | Meta model jobs + generated usage table |
 | `scripts/prepublish_check.sh` | Submission hygiene |
