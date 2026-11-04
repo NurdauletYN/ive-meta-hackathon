@@ -20,6 +20,7 @@ from harness.report import write_results, write_results_html
 from harness.ship import ShipError, run_ship
 from harness.sweep import DirtyTreeError, load_ideas, run_sweep
 from harness.ui import serve_ui
+from harness.sameness import iter_projects, pairwise, render_sameness
 from harness.usage_report import load_usage, patch_metause, render_usage
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -50,7 +51,7 @@ def main(argv: list[str] | None = None) -> None:
     build = sub.add_parser("build", help="Spec + file ops + gate/repair")
     build.add_argument("idea")
     build.add_argument("--pilot", default="muse")
-    build.add_argument("--mode", choices=("harness", "bare"), required=True)
+    build.add_argument("--mode", choices=("harness", "bare", "scaffold_only"), required=True)
     build.add_argument("--run", required=True, help="run id, also used as runs/<id>")
     build.add_argument("--max-usd", type=float, default=None)
 
@@ -63,6 +64,11 @@ def main(argv: list[str] | None = None) -> None:
 
     sweep = sub.add_parser("sweep", help="Each idea × live pilots × harness/bare into ivebench/results")
     sweep.add_argument("--pilots", default="muse,baseten", help="comma-separated --pilot names")
+    sweep.add_argument(
+        "--modes",
+        default="harness,bare",
+        help="comma-separated modes: bare,scaffold_only,harness (default harness,bare)",
+    )
     sweep.add_argument("--max-usd", type=float, default=8)
     sweep.add_argument("--max-usd-per-pilot", type=float, default=4)
     sweep.add_argument("--limit", type=int, default=None)
@@ -79,6 +85,15 @@ def main(argv: list[str] | None = None) -> None:
     ship.add_argument("project_dir", type=Path)
     ship.add_argument("--target", choices=("testflight",), default="testflight")
     ship.add_argument("--dry-run", action="store_true", help="Validate inputs and print commands; execute nothing")
+
+    sameness = sub.add_parser("sameness", help="Pairwise structural similarity of lib/app across generated apps")
+    sameness.add_argument("runs_glob", help="glob of run or project directories, e.g. runs/sweep-*")
+    sameness.add_argument(
+        "--append-results",
+        type=Path,
+        default=None,
+        help="Append the table to a results.md file",
+    )
 
     usage = sub.add_parser("usage-report", help="Aggregate usage.jsonl by model and stage")
     usage.add_argument("--in", dest="usage_path", type=Path, default=ROOT / "ivebench" / "results" / "usage.jsonl")
@@ -150,6 +165,7 @@ def _dispatch(args: argparse.Namespace) -> None:
         if args.limit:
             ideas = ideas[: args.limit]
         names = [p.strip() for p in args.pilots.split(",") if p.strip()]
+        modes = tuple(m.strip() for m in args.modes.split(",") if m.strip())
 
         def make_session(run_id: str, pilot_name: str, max_usd: float | None) -> PilotSession:
             return _session(pilot_name, run_id, max_usd)
@@ -162,6 +178,7 @@ def _dispatch(args: argparse.Namespace) -> None:
             runs=ROOT / "runs",
             usage_path=ROOT / DEFAULT_USAGE_PATH,
             pilots=names,
+            modes=modes,
             max_usd=args.max_usd,
             max_usd_per_pilot=args.max_usd_per_pilot,
             build_web=args.build_web,
@@ -186,6 +203,19 @@ def _dispatch(args: argparse.Namespace) -> None:
             )
             wrote = write_results_html(args.indir, html_path)
             print(f"wrote {wrote}")
+        return
+
+    if args.command == "sameness":
+        projects = iter_projects(args.runs_glob, cwd=ROOT)
+        table = render_sameness(pairwise(projects))
+        print(table)
+        if args.append_results:
+            dest = args.append_results
+            prev = dest.read_text(encoding="utf-8") if dest.is_file() else ""
+            if "## Structural sameness" in prev:
+                prev = prev.split("## Structural sameness")[0].rstrip() + "\n\n"
+            dest.write_text(prev + table, encoding="utf-8")
+            print(f"wrote {dest}")
         return
 
     if args.command == "usage-report":

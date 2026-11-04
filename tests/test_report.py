@@ -46,6 +46,17 @@ def test_report_splits_infra_and_quality(tmp_path: Path) -> None:
     ]
     text = render_results(rows)
     assert "passed / completed" in text
+    scaffold = render_results(
+        [
+            _row(),
+            _row(run_id="sweep-muse-tool_library-scaffold_only", mode="scaffold_only", outcome="pass", repair_rounds=0),
+            _row(run_id="sweep-muse-tool_library-bare", mode="bare", outcome="quality_fail", ok=False),
+        ]
+    )
+    assert "scaffold_only" in scaffold
+    assert "| muse | harness |" in scaffold
+    assert "| muse | scaffold_only |" in scaffold
+    assert "| muse | bare |" in scaffold
     assert "1/2" in text  # muse harness: 1 pass / (1 pass + 1 quality)
     assert "infra_fail" in text
     assert "timeout" in text

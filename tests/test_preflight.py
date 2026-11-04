@@ -8,10 +8,14 @@ import pytest
 from preflight.checks import (
     ALL_CHECKS,
     check_account_deletion,
+    check_account_deletion_erases_data,
+    check_home_not_webview,
     check_interactive_home,
     check_no_placeholders,
     check_privacy_links,
+    check_remote_code,
     check_restore_purchases,
+    check_smoke_tests_pass,
     check_subscription_disclosure,
     check_terms_links,
     check_wcag_contrast,
@@ -55,6 +59,9 @@ def test_relocated_layout_still_passes(tmp_path: Path) -> None:
         ("fail_disclosure", check_subscription_disclosure, "subscription_disclosure"),
         ("fail_placeholder", check_no_placeholders, "no_placeholders"),
         ("fail_contrast", check_wcag_contrast, "wcag_contrast"),
+        ("fail_smoke", check_smoke_tests_pass, "smoke_tests_pass"),
+        ("fail_erase", check_account_deletion_erases_data, "account_deletion_erases_data"),
+        ("fail_webview", check_home_not_webview, "home_not_webview"),
     ],
 )
 def test_fail_fixture_triggers_exactly_one_check(
@@ -114,3 +121,10 @@ def test_interactive_home_pass_when_stateful(tmp_path: Path) -> None:
     )
     result = check_interactive_home(tmp_path)
     assert result.status == CheckStatus.PASS
+
+
+def test_remote_code_warns(tmp_path: Path) -> None:
+    result = check_remote_code(FIX / "fail_remote")
+    assert result.status == CheckStatus.WARN
+    assert result.check_id == "remote_code"
+    assert check_remote_code(PASS).status == CheckStatus.PASS

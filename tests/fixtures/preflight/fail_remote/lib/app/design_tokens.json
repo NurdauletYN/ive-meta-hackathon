@@ -1,0 +1,20 @@
+{
+  "colors": {
+    "primary": "#1565C0",
+    "on_primary": "#FFFFFF",
+    "surface": "#F5F7FA",
+    "on_surface": "#1A1A1A"
+  },
+  "contrast_pairs": [
+    {
+      "name": "body_on_surface",
+      "foreground": "#1A1A1A",
+      "background": "#F5F7FA"
+    },
+    {
+      "name": "on_primary",
+      "foreground": "#FFFFFF",
+      "background": "#1565C0"
+    }
+  ]
+}

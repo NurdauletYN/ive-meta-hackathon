@@ -304,6 +304,7 @@ def run_sweep(
         "git_sha": sha,
         "pilots": names,
         "ok_harness": sum(1 for r in rows if r.get("mode") == "harness" and r.get("outcome") == "pass"),
+        "ok_scaffold_only": sum(1 for r in rows if r.get("mode") == "scaffold_only" and r.get("outcome") == "pass"),
         "ok_bare": sum(1 for r in rows if r.get("mode") == "bare" and r.get("outcome") == "pass"),
         "infra": sum(1 for r in rows if r.get("outcome") == INFRA),
         "quality_fail": sum(1 for r in rows if r.get("outcome") == "quality_fail"),

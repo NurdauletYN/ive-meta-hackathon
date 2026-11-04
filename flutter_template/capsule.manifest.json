@@ -20,6 +20,12 @@
       "author": "human harness",
       "date": "2026-11-04",
       "reason": "`/` uses extraFeatureRoutes().first so the generated feature is the home screen. Capsule HomeScreen is the fallback when the list is empty."
+    },
+    {
+      "path": "lib/core/auth/in_memory_auth_service.dart",
+      "author": "human harness",
+      "date": "2026-11-04",
+      "reason": "deleteAccount() clears userData so in-memory app data for that user is empty after deletion."
     }
   ]
 }
