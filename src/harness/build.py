@@ -294,13 +294,14 @@ def run_build(
         t0 = time.perf_counter()
         build_user = (
             f"AppSpec:\n{spec.model_dump_json()}\n\n"
-            "Emit at most 6 file operations. Implement at least 3 screens with in-memory "
-            "state (StatefulWidget + setState): (1) a browse/list, (2) a detail or create flow, "
-            "(3) a profile/summary. Seed 8 to 12 realistic items with emoji or icons — no network "
-            "images. Use ONLY kit widgets for layout (RocketScaffold, HeroHeader, ItemCard, …). "
-            "Register screens in extraFeatureRoutes(); the FIRST entry is home at /. Mark up to 4 "
-            "as tab: true with an emoji icon. Keep the FeatureRoute class in registry.dart. "
-            "Each Dart file under 100 lines. Writes use content; find and replace must be JSON null. "
+            "Emit 4 write operations only: "
+            "lib/app/features/app/store.dart (8–12 emoji items, in-memory), "
+            "lib/app/features/app/browse_screen.dart, "
+            "lib/app/features/app/detail_screen.dart (detail or create), "
+            "lib/app/features/registry.dart (keep FeatureRoute; include a short ProfileScreen in this file; "
+            "register browse FIRST as home, then detail, then profile; tab: true with emoji icons). "
+            "StatefulWidget + setState on browse and detail. ONLY kit widgets for layout. "
+            "Each file under 70 lines. Terse Dart, no comments. content set; find/replace JSON null. "
             "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core."
         )
         ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)
