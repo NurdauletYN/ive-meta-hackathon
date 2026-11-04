@@ -6,10 +6,7 @@
     <title>Rocket studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -26,32 +23,33 @@
     </header>
 
     <ol class="steps" id="steps" aria-label="progress">
-      <li data-step="idea" class="on">Idea</li>
-      <li data-step="looks">Looks</li>
-      <li data-step="build">App</li>
-      <li data-step="checks">Checks</li>
-      <li data-step="compare">Compare</li>
+      <li data-step="describe" class="on"><span>1</span> Describe</li>
+      <li data-step="looks"><span>2</span> Choose a look</li>
+      <li data-step="build"><span>3</span> Build</li>
+      <li data-step="check"><span>4</span> Check</li>
+      <li data-step="ship"><span>5</span> Ship</li>
     </ol>
 
     <div class="shell">
       <section class="composer" aria-label="Brief">
-        <p class="eyebrow">Brief</p>
+        <p class="eyebrow">Describe</p>
         <h2>What should this app do?</h2>
         <p class="lede">
-          Write the idea. Pick a look. Rocket builds a Flutter app, then runs store checks.
-          You stay on the idea and the feel — not auth, billing, or signing.
+          Rocket is a harness: pre-built, locked sign-in, onboarding, paywall and legal screens plus 12 store checks the model cannot edit.
+          You write the idea. The model fills in the screens.
         </p>
         <label class="field">
           <span>App idea</span>
-          <textarea id="idea" rows="4" placeholder="A quiet notes app for people who share a harbor…"></textarea>
+          <textarea id="idea" rows="4" placeholder="A neighborhood tool library for sharing drills, ladders, and saws…"></textarea>
         </label>
         <div class="chips" id="ideas" aria-label="sample ideas"></div>
         <div class="actions">
-          <button type="button" id="btn-design">Show three looks</button>
-          <button type="button" id="btn-build" class="primary">Build the app</button>
+          <button type="button" id="btn-design">Choose a look</button>
+          <button type="button" id="btn-default-look">Use default look</button>
+          <button type="button" id="btn-build" class="primary" disabled>Build</button>
         </div>
         <div class="actions secondary-actions">
-          <button type="button" id="btn-compare">Compare without harness</button>
+          <button type="button" id="btn-compare">Does the harness matter?</button>
         </div>
         <details class="advanced">
           <summary>Model and spend</summary>
@@ -74,7 +72,19 @@
       </section>
 
       <main class="stage">
-        <p class="eyebrow">On a phone</p>
+        <p class="eyebrow">Preview</p>
+        <ol class="build-stepper" id="build-stepper" hidden>
+          <li data-build="understand"><span class="step-name">Understanding your idea</span><span class="elapsed" data-elapsed></span></li>
+          <li data-build="designing"><span class="step-name">Designing the screens</span><span class="elapsed" data-elapsed></span></li>
+          <li data-build="writing"><span class="step-name">Writing the code</span><span class="elapsed" data-elapsed></span></li>
+          <li data-build="checks"><span class="step-name">Running store checks</span><span class="elapsed" data-elapsed></span></li>
+          <li data-build="fixing"><span class="step-name">Fixing issues</span><span class="elapsed" data-elapsed></span></li>
+          <li data-build="ready"><span class="step-name">Ready</span><span class="elapsed" data-elapsed></span></li>
+        </ol>
+        <p class="build-stats" id="build-stats" hidden>
+          <span id="token-count">0 tokens</span>
+        </p>
+        <p class="plain-error" id="plain-error" hidden></p>
         <div class="phones" id="phones">
           <div class="phone-wrap" id="phone-main">
             <p class="phone-label">preview</p>
@@ -83,7 +93,7 @@
               <div class="screen">
                 <div class="empty-hero">
                   <p class="empty">Your app will show up here.</p>
-                  <p class="empty-sub">Three looks first, then a real Flutter build.</p>
+                  <p class="empty-sub">Choose a look, then build.</p>
                 </div>
               </div>
               <div class="home"></div>
@@ -132,8 +142,8 @@
 
     <section id="evidence" class="evidence" hidden>
       <div class="evidence-head">
-        <p class="eyebrow">Store checks</p>
-        <h2>Is this ready to ship?</h2>
+        <p class="eyebrow">Check</p>
+        <h2>Store checks</h2>
         <p id="evidence-meta" class="evidence-meta"></p>
       </div>
       <div class="evidence-grid">
@@ -147,26 +157,28 @@
         </div>
       </div>
       <p id="evidence-ship" class="evidence-meta"></p>
-      <aside class="next">
-        <p class="eyebrow">Next</p>
-        <h3>Store listing</h3>
-        <p>
-          Icon, listing copy, and a privacy template (not legal advice) are prepared by
-          <code>harness storepack</code>. TestFlight upload is <code>harness ship</code> —
-          it needs your Apple keys on this machine, never in this window.
-        </p>
-      </aside>
     </section>
 
     <section id="compare-results" class="evidence" hidden>
-      <p class="eyebrow">Compare without harness</p>
+      <p class="eyebrow">Does the harness matter?</p>
       <h2>Same idea, with and without Rocket</h2>
       <p class="evidence-meta">From <code>harness report</code> (<code>ivebench/results/results.md</code>). Counts only.</p>
+      <p id="compare-empty">No sweep results exist yet.</p>
       <div id="compare-table" class="md-tables"></div>
     </section>
 
+    <section id="ship-panel" class="evidence" hidden>
+      <p class="eyebrow">Ship</p>
+      <h2>Listing and TestFlight</h2>
+      <p>
+        Icon, listing copy, and a privacy template (not legal advice) are prepared by
+        <code>harness storepack</code>. TestFlight upload is <code>harness ship</code> —
+        it needs your Apple keys on this machine, never in this window.
+      </p>
+    </section>
+
     <details class="details" id="details">
-      <summary>Build log and files</summary>
+      <summary>Details</summary>
       <div class="details-grid">
         <div>
           <h2>Files</h2>
@@ -184,7 +196,7 @@
       Auth and billing stay in demo until you add your own Firebase or RevenueCat keys.
       Preflight is an engineering gate, not App Review, and not legal advice.
       This UI is not the Ive product.
-      Built with Muse Spark Open.
+      <span id="used-model"></span>
     </footer>
     <script src="/app.js"></script>
   </body>
