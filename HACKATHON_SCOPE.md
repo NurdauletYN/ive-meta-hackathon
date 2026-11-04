@@ -52,6 +52,9 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `scripts/prepublish_check.sh` | done | 2026-11-04 | NEW | Gitleaks, secret filenames, tests, gate, clone, README links |
 | `demo/` studio polish | done | 2026-11-04 | NEW | Evidence panel, Muse Spark default, compare-without-harness, 960px |
 | `harness report --html` | done | 2026-11-04 | NEW | Static GitHub Pages page; no keys, no live calls |
+| `src/preflight` +4 checks | done | 2026-11-04 | NEW | smoke_tests_pass, account_deletion_erases_data, home_not_webview, remote_code |
+| `src/harness/sameness.py` | done | 2026-11-04 | NEW | Pairwise Jaccard 5-grams over lib/app; report only |
+| `scaffold_only` mode | done | 2026-11-04 | NEW | Capsule + guard, one build call, zero repair rounds |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 

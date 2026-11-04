@@ -331,6 +331,94 @@ def check_interactive_home(project: Path) -> CheckResult:
     )
 
 
+def check_smoke_tests_pass(project: Path) -> CheckResult:
+    check_id = "smoke_tests_pass"
+    tests = list((project / "test").rglob("*_test.dart")) if (project / "test").is_dir() else []
+    for path in tests:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if re.search(r"\btest\s*\(|\btestWidgets\s*\(", text):
+            return CheckResult(
+                check_id,
+                CheckStatus.PASS,
+                "smoke test file present (gate also runs flutter test)",
+                _rel(project, path),
+                _line_of(text, "test(") or _line_of(text, "testWidgets(") or 1,
+            )
+    return CheckResult(check_id, CheckStatus.FAIL, "no test/*_test.dart with test() or testWidgets()", "test", 1)
+
+
+_DELETE_ACCOUNT = re.compile(
+    r"deleteAccount\s*\([^)]*\)\s*(?:async\s*)?\{(.*?)\n\}",
+    re.S,
+)
+
+
+def check_account_deletion_erases_data(project: Path) -> CheckResult:
+    check_id = "account_deletion_erases_data"
+    for path, text in _lib_dart(project):
+        match = _DELETE_ACCOUNT.search(text)
+        if not match:
+            continue
+        body = match.group(1)
+        if ".clear(" in body or re.search(r"=\s*null", body):
+            return CheckResult(
+                check_id,
+                CheckStatus.PASS,
+                "deleteAccount clears in-memory user data",
+                _rel(project, path),
+                text[: match.start()].count("\n") + 1,
+            )
+        return CheckResult(
+            check_id,
+            CheckStatus.FAIL,
+            "deleteAccount does not clear in-memory data",
+            _rel(project, path),
+            text[: match.start()].count("\n") + 1,
+        )
+    return CheckResult(check_id, CheckStatus.FAIL, "no deleteAccount implementation under lib/", "lib", 1)
+
+
+_WEBVIEW = re.compile(r"\bWebViewWidget\b|\bWebView\b|\bInAppWebView\b|webview_flutter")
+
+
+def check_home_not_webview(project: Path) -> CheckResult:
+    check_id = "home_not_webview"
+    for path, text in _lib_dart(project):
+        homeish = "home" in path.name.lower() or "HomeScreen" in text
+        if not homeish:
+            continue
+        match = _WEBVIEW.search(text)
+        if match:
+            return CheckResult(
+                check_id,
+                CheckStatus.FAIL,
+                "home renders a WebView as main content",
+                _rel(project, path),
+                text[: match.start()].count("\n") + 1,
+            )
+    return CheckResult(check_id, CheckStatus.PASS, "home is not a WebView")
+
+
+_REMOTE = re.compile(
+    r"\beval\s*\(|javascript:|Isolate\.spawnUri|dart:mirrors|WebAssembly\.instantiate"
+)
+
+
+def check_remote_code(project: Path) -> CheckResult:
+    check_id = "remote_code"
+    for path, text in _lib_dart(project):
+        match = _REMOTE.search(text)
+        if match:
+            return CheckResult(
+                check_id,
+                CheckStatus.WARN,
+                "dynamic remote code or eval-like pattern",
+                _rel(project, path),
+                text[: match.start()].count("\n") + 1,
+            )
+    return CheckResult(check_id, CheckStatus.PASS, "no eval-like remote code patterns")
+
+
 ALL_CHECKS = (
     check_privacy_links,
     check_terms_links,
@@ -340,4 +428,8 @@ ALL_CHECKS = (
     check_no_placeholders,
     check_wcag_contrast,
     check_interactive_home,
+    check_smoke_tests_pass,
+    check_account_deletion_erases_data,
+    check_home_not_webview,
+    check_remote_code,
 )

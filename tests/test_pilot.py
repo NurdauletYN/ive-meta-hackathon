@@ -482,3 +482,36 @@ def test_one_gate_repair_round(tmp_path: Path) -> None:
     assert result["repair_rounds"] == 1
     assert n["i"] == 2
     assert any("Gate failed" in c[2] for c in fake.calls if c[0] == "file_ops")
+
+
+def test_scaffold_only_is_capsule_plus_guard_with_zero_repairs(tmp_path: Path) -> None:
+    n = {"i": 0}
+
+    def always_fail(project: Path) -> GateReport:
+        n["i"] += 1
+        return GateReport(
+            project_dir=str(project),
+            ok=False,
+            steps=[StepResult("preflight", False, 1.0, "placeholder")],
+            preflight=[],
+        )
+
+    fake = FakePilot()
+    fake.enqueue("spec", APP_SPEC)
+    fake.enqueue("file_ops", GOOD_OPS)
+    session = _session(fake, tmp_path, "scaffold-1")
+    result = run_build(
+        "tool_library",
+        session,
+        mode="scaffold_only",
+        run_dir=tmp_path / "run",
+        capsule=CAPSULE,
+        gate_fn=always_fail,
+        build_web=False,
+    )
+    assert result["mode"] == "scaffold_only"
+    assert result["repair_rounds"] == 0
+    assert n["i"] == 1
+    assert result["ok"] is False
+    assert (tmp_path / "run" / "project" / "lib" / "core" / "auth" / "auth_service.dart").is_file()
+    assert sum(1 for c in fake.calls if c[0] == "file_ops") == 1

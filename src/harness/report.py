@@ -44,7 +44,9 @@ def _median(values: list[float]) -> str:
 
 def render_results(rows: list[dict[str, Any]]) -> str:
     pilots = sorted({str(r.get("pilot") or "unknown") for r in rows})
-    modes = ("harness", "bare")
+    order = ("harness", "scaffold_only", "bare")
+    present = {str(r.get("mode") or "") for r in rows}
+    modes = [m for m in order if m in present] + sorted(m for m in present if m and m not in order)
     lines = [
         "# Sweep results",
         "",

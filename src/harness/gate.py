@@ -50,6 +50,9 @@ def run_gate(
     code, out, ms = _run(["flutter", "analyze", "--no-fatal-infos"], project)
     steps.append(StepResult("flutter_analyze", code == 0, ms, out if code else None))
 
+    code, out, ms = _run(["flutter", "test"], project)
+    steps.append(StepResult("flutter_test", code == 0, ms, out if code else None))
+
     if build_web:
         started = time.perf_counter()
         ok, out = flutter_web_build(project, base_href=base_href)

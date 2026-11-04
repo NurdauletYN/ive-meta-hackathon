@@ -2,6 +2,7 @@ import 'auth_service.dart';
 
 class InMemoryAuthService implements AuthService {
   String? _email;
+  final Map<String, Object?> userData = <String, Object?>{};
 
   @override
   bool get isSignedIn => _email != null;
@@ -22,5 +23,6 @@ class InMemoryAuthService implements AuthService {
   @override
   Future<void> deleteAccount() async {
     _email = null;
+    userData.clear();
   }
 }

@@ -233,17 +233,20 @@ def run_build(
 
     session.emit("stage", name="prepare", status="start", mode=mode)
     t0 = time.perf_counter()
-    if mode == "harness":
+    max_repairs = MAX_GATE_REPAIRS
+    if mode in ("harness", "scaffold_only"):
         copy_tree(capsule, project)
         system = CAPSULE_PREFIX
         allowed = HARNESS_ALLOWED
+        if mode == "scaffold_only":
+            max_repairs = 0
     elif mode == "bare":
         creator = create_fn or (lambda dest: default_flutter_create(dest, capsule / "pubspec.yaml"))
         creator(project)
         system = BARE_REQUIREMENTS
         allowed = None
     else:
-        raise ValueError("mode must be harness or bare")
+        raise ValueError("mode must be harness, scaffold_only, or bare")
     choice_name = _apply_choice_tokens(run_dir, project)
     if choice_name:
         session.emit("choice", name=choice_name)
@@ -305,7 +308,7 @@ def run_build(
         t0 = time.perf_counter()
         report = gate(project)
         _emit_gate(session, report)
-        while not report.ok and repair_rounds < MAX_GATE_REPAIRS:
+        while not report.ok and repair_rounds < max_repairs:
             repair_rounds += 1
             session.emit("repair", round=repair_rounds)
             fail_text = _failing_text(report)
