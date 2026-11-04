@@ -1,4 +1,4 @@
-"""CLI: gate, design, design pick, serve, build, ship."""
+"""CLI: gate, design, design pick, serve, build, ship, storepack."""
 
 from __future__ import annotations
 
@@ -22,6 +22,8 @@ from harness.sweep import DirtyTreeError, load_ideas, run_sweep
 from harness.ui import serve_ui
 from harness.sameness import iter_projects, pairwise, render_sameness
 from harness.usage_report import load_usage, patch_metause, render_usage
+from storepack.pack import build_storepack, canned_fake_pilot, mock_icon_png, muse_image_fn
+from storepack.scan import read_app_name
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -99,6 +101,12 @@ def main(argv: list[str] | None = None) -> None:
     usage.add_argument("--in", dest="usage_path", type=Path, default=ROOT / "ivebench" / "results" / "usage.jsonl")
     usage.add_argument("--write-metause", action="store_true", help="Replace the marked table in METAUSE.md")
     usage.add_argument("--out", dest="usage_out", type=Path, default=None)
+
+    storepack = sub.add_parser("storepack", help="Icon, listing copy, and privacy draft zip")
+    storepack.add_argument("project_dir", type=Path)
+    storepack.add_argument("--pilot", default="fake")
+    storepack.add_argument("--out", type=Path)
+    storepack.add_argument("--max-usd", type=float, default=1.0)
 
     args = parser.parse_args(argv)
     try:
@@ -234,6 +242,34 @@ def _dispatch(args: argparse.Namespace) -> None:
             print("DRY-RUN (nothing executed)")
             for cmd in result.get("commands") or result.get("planned") or []:
                 print(cmd)
+        print(json.dumps(result, indent=2, default=str))
+        sys.exit(0 if result.get("ok") else 1)
+
+    if args.command == "storepack":
+        project = args.project_dir.resolve()
+        if not project.is_dir():
+            raise SystemExit(f"project_dir does not exist: {project}")
+        out = args.out or ROOT / "runs" / "storepack"
+        run_id = out.name
+        app_name = read_app_name(project)
+        fake = canned_fake_pilot(app_name) if args.pilot == "fake" else None
+        session = _session(args.pilot, run_id, args.max_usd, fake=fake)
+        if args.pilot == "fake":
+            def image_fn(_prompt: str) -> bytes:
+                return mock_icon_png()
+
+            icon_mock = True
+        else:
+            image_fn = muse_image_fn(session)
+            icon_mock = False
+        result = build_storepack(
+            project,
+            out,
+            session=session,
+            image_fn=image_fn,
+            app_name=app_name,
+            icon_mock=icon_mock,
+        )
         print(json.dumps(result, indent=2, default=str))
         sys.exit(0 if result.get("ok") else 1)
 

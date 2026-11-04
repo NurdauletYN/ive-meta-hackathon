@@ -35,7 +35,9 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `ivebench/ideas.jsonl` | done | 2026-11-03 | NEW | 8 app ideas (no medical / mental health / nutrition / sports / job screening / political) |
 | `docs/preflight.md` | done | 2026-11-03 | NEW | Check descriptions; not legal advice |
 | `tests/test_guard.py`, `test_preflight.py`, `test_pilot.py` | done | 2026-11-03 | NEW | Guard, preflight, FakePilot e2e (repair, guard, invalid JSON, budget) |
-| `src/codegen/`, `compile_runner/`, `storepack/` | not started | — | — | Placeholder READMEs only; repair loop lives in `src/harness/build.py` |
+| `src/codegen/`, `compile_runner/` | not started | — | — | Placeholder READMEs only; repair loop lives in `src/harness/build.py` |
+| `src/storepack/` | done | 2026-11-04 | NEW | Icon (raw + Lanczos 1024/512), listing JSON, privacy template zip; FakePilot tests + one live Muse Image smoke |
+| `docs/storepack.md` | done | 2026-11-04 | NEW | Commands; template-not-legal-advice; what is unverified |
 | `demo/` + `src/harness/ui.py` | done | 2026-11-04 | NEW | Phone-first studio: ticker, details drawer, compare, design pick. Not the Ive product. |
 | `src/harness/events.py` | done | 2026-11-03 | NEW | Run event jsonl + in-process hub (live SSE, no history replay) |
 | `src/harness/web_build.py` | done | 2026-11-03 | NEW | `flutter build web --base-href` so iframe previews resolve |
