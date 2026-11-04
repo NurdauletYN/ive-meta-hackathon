@@ -11,7 +11,9 @@ from preflight.checks import (
     check_account_deletion_erases_data,
     check_home_not_webview,
     check_interactive_home,
+    check_kit_usage,
     check_no_placeholders,
+    check_not_text_only,
     check_privacy_links,
     check_remote_code,
     check_restore_purchases,
@@ -128,3 +130,24 @@ def test_remote_code_warns(tmp_path: Path) -> None:
     assert result.status == CheckStatus.WARN
     assert result.check_id == "remote_code"
     assert check_remote_code(PASS).status == CheckStatus.PASS
+
+
+def test_kit_usage_and_not_text_only_pass_without_features() -> None:
+    assert check_kit_usage(PASS).status == CheckStatus.PASS
+    assert check_not_text_only(PASS).status == CheckStatus.PASS
+
+
+def test_kit_usage_warns_on_text_lists() -> None:
+    project = FIX / "warn_kit"
+    kit = check_kit_usage(project)
+    assert kit.status == CheckStatus.WARN
+    assert kit.check_id == "kit_usage"
+    text_only = check_not_text_only(project)
+    assert text_only.status == CheckStatus.WARN
+    assert text_only.check_id == "not_text_only"
+
+
+def test_kit_ok_fixture_passes_kit_checks() -> None:
+    project = FIX / "kit_ok"
+    assert check_kit_usage(project).status == CheckStatus.PASS
+    assert check_not_text_only(project).status == CheckStatus.PASS

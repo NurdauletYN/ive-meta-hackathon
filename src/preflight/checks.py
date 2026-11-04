@@ -419,6 +419,107 @@ def check_remote_code(project: Path) -> CheckResult:
     return CheckResult(check_id, CheckStatus.PASS, "no eval-like remote code patterns")
 
 
+KIT_WIDGETS = (
+    "RocketScaffold",
+    "HeroHeader",
+    "SectionTitle",
+    "ItemCard",
+    "ChipRow",
+    "KitBadge",
+    "PriceTag",
+    "StatTile",
+    "EmptyState",
+    "PrimaryButton",
+    "SecondaryButton",
+    "AppTextField",
+    "QuantityStepper",
+    "showKitFormSheet",
+)
+
+_EMOJI = re.compile(
+    r"[\U0001F300-\U0001FAFF]|[\u2600-\u27BF]|Icons\.\w+"
+)
+
+
+def _generated_feature_files(project: Path) -> list[DartFile]:
+    registry = None
+    for path, text in _lib_dart(project):
+        if path.name == "registry.dart" and "extraFeatureRoutes" in text:
+            registry = (path, text)
+            break
+    if registry is None or "FeatureRoute(" not in registry[1]:
+        return []
+    features_dir = registry[0].parent
+    out: list[DartFile] = []
+    for dart_path, src in _lib_dart(project):
+        try:
+            dart_path.relative_to(features_dir)
+        except ValueError:
+            continue
+        if dart_path.name in {"registry.dart", "home_screen.dart"}:
+            continue
+        out.append((dart_path, src))
+    return out
+
+
+def check_kit_usage(project: Path) -> CheckResult:
+    check_id = "kit_usage"
+    files = _generated_feature_files(project)
+    if not files:
+        return CheckResult(check_id, CheckStatus.PASS, "no generated extra features")
+    found: list[str] = []
+    sample = files[0]
+    for name in KIT_WIDGETS:
+        for path, text in files:
+            if re.search(rf"\b{name}\b", text):
+                found.append(name)
+                sample = (path, text)
+                break
+    if len(found) >= 4:
+        return CheckResult(
+            check_id,
+            CheckStatus.PASS,
+            f"generated screens use {len(found)} kit widget types",
+            _rel(project, sample[0]),
+            _line_of(sample[1], found[0]) or 1,
+        )
+    return CheckResult(
+        check_id,
+        CheckStatus.WARN,
+        f"generated screens use {len(found)} kit widget types (want at least 4)",
+        _rel(project, sample[0]),
+        1,
+    )
+
+
+def check_not_text_only(project: Path) -> CheckResult:
+    check_id = "not_text_only"
+    files = _generated_feature_files(project)
+    if not files:
+        return CheckResult(check_id, CheckStatus.PASS, "no generated extra features")
+    joined = "\n".join(text for _, text in files)
+    has_card = "ItemCard" in joined or "HeroHeader" in joined
+    has_icon = _EMOJI.search(joined) is not None
+    if has_card and has_icon:
+        path, text = files[0]
+        needle = "ItemCard" if "ItemCard" in text else ("HeroHeader" if "HeroHeader" in text else "")
+        return CheckResult(
+            check_id,
+            CheckStatus.PASS,
+            "generated screens include cards and emoji or icons",
+            _rel(project, path),
+            (_line_of(text, needle) if needle else 1) or 1,
+        )
+    path, _text = files[0]
+    return CheckResult(
+        check_id,
+        CheckStatus.WARN,
+        "generated screens look like text lists (need cards plus emoji or icons)",
+        _rel(project, path),
+        1,
+    )
+
+
 ALL_CHECKS = (
     check_privacy_links,
     check_terms_links,
@@ -432,4 +533,6 @@ ALL_CHECKS = (
     check_account_deletion_erases_data,
     check_home_not_webview,
     check_remote_code,
+    check_kit_usage,
+    check_not_text_only,
 )

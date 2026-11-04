@@ -20,7 +20,9 @@ Checks search **all of `lib/`** (and `test/` for smoke). They do not require cap
 | `account_deletion_erases_data` | `deleteAccount()` clears in-memory user data (`.clear()` or `= null`); capsule has a behavioral Flutter test | 5.1.1(v) Account Deletion |
 | `home_not_webview` | **FAIL** if a home-named screen renders `WebView` / `WebViewWidget` as main content | 4.2 Minimum Functionality (web wrapper) |
 | `remote_code` | **WARN** on `eval(`, `javascript:`, `Isolate.spawnUri`, `dart:mirrors`, `WebAssembly.instantiate` | 2.5.2 Software Requirements (remote code) |
+| `kit_usage` | **WARN** if generated extra screens use fewer than 4 distinct kit widget types | 4.0 Design |
+| `not_text_only` | **WARN** if generated extra screens are Text/ListTile lists without cards and emoji or icons | 4.0 Design / 4.2 Minimum Functionality |
 
-There are **12** checks (8 from earlier in the week plus 4 added here). A prompt that said “11” counted before `interactive_home` existed.
+There are **14** checks (12 from earlier plus 2 WARN kit checks). The original 12 still FAIL/WARN as before; `kit_usage` and `not_text_only` never FAIL.
 
 Fixtures under `tests/fixtures/preflight/` include a passing project and one failing tree per FAIL check. `remote_code` is WARN-only. `test_relocated_layout_still_passes` moves files off capsule paths and still expects PASS.

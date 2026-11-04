@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/kit/kit.dart';
 import '../../strings.dart';
 import '../registry.dart';
 
@@ -10,29 +11,35 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final extras = extraFeatureRoutes();
-    return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.homeTitle)),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(AppStrings.appName, style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => context.push('/paywall'),
-              child: const Text(AppStrings.paywallTitle),
+    final tokens = KitTokens.of(context);
+    return RocketScaffold(
+      title: AppStrings.homeTitle,
+      body: ListView(
+        padding: EdgeInsets.all(tokens.spacing.lg),
+        children: [
+          HeroHeader(
+            title: AppStrings.appName,
+            subtitle: 'Locked sign-in, onboarding, paywall and legal screens are already here.',
+            emoji: '🚀',
+          ),
+          SizedBox(height: tokens.spacing.lg),
+          PrimaryButton(
+            label: AppStrings.paywallTitle,
+            onPressed: () => context.push('/paywall'),
+          ),
+          SizedBox(height: tokens.spacing.sm),
+          SecondaryButton(
+            label: AppStrings.settingsTitle,
+            onPressed: () => context.push('/settings'),
+          ),
+          if (extras.isNotEmpty) SectionTitle('More'),
+          for (final feature in extras)
+            ItemCard(
+              emoji: feature.icon,
+              title: feature.label,
+              onTap: () => context.push(feature.path),
             ),
-            TextButton(
-              onPressed: () => context.push('/settings'),
-              child: const Text(AppStrings.settingsTitle),
-            ),
-            for (final feature in extras)
-              TextButton(
-                onPressed: () => context.push(feature.path),
-                child: Text(feature.label),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }

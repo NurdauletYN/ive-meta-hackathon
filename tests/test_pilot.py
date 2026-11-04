@@ -371,6 +371,11 @@ def test_harness_mode_e2e_and_identical_prefix(tmp_path: Path) -> None:
     assert systems[0] == CAPSULE_PREFIX
     assert systems[1] == CAPSULE_PREFIX
     assert systems[0] == systems[1]
+    assert "RocketScaffold" in CAPSULE_PREFIX
+    from harness.prompts import KIT_API
+
+    assert KIT_API in CAPSULE_PREFIX
+    assert (ROOT / "docs" / "kit_api.md").read_text(encoding="utf-8") == KIT_API
 
 
 def test_bare_mode_e2e(tmp_path: Path) -> None:

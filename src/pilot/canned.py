@@ -54,80 +54,255 @@ APP_SPEC = {
     "paywall_body": "Unlimited borrows for your block.",
     "paywall_cta": "Subscribe",
     "screens": [
-        {"id": "catalog", "purpose": "browse tools", "fields": [{"name": "title", "type": "string"}]}
+        {"id": "catalog", "purpose": "browse tools", "fields": [{"name": "title", "type": "string"}]},
+        {"id": "create", "purpose": "list a tool", "fields": [{"name": "title", "type": "string"}]},
+        {"id": "profile", "purpose": "borrower summary", "fields": [{"name": "name", "type": "string"}]},
     ],
     "data_models": [{"name": "Tool", "fields": [{"name": "title", "type": "string"}]}],
 }
 
-NOTES_DART = """import 'package:flutter/material.dart';
-
-class NotesScreen extends StatefulWidget {
-  const NotesScreen({super.key});
-  @override
-  State<NotesScreen> createState() => _NotesScreenState();
+STORE_DART = """class ToolItem {
+  ToolItem({required this.emoji, required this.title, required this.subtitle, required this.category, this.listed = true});
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final String category;
+  bool listed;
 }
 
-class _NotesScreenState extends State<NotesScreen> {
-  final items = <String>['Hammer'];
-  final controller = TextEditingController();
+class CatalogStore {
+  CatalogStore._();
+  static final CatalogStore instance = CatalogStore._();
+  ToolItem? selected;
+  final List<ToolItem> items = [
+    ToolItem(emoji: '🔨', title: 'Claw hammer', subtitle: '16 oz steel', category: 'Hand'),
+    ToolItem(emoji: '🪛', title: 'Screwdriver set', subtitle: 'Phillips and flat', category: 'Hand'),
+    ToolItem(emoji: '🔧', title: 'Adjustable wrench', subtitle: '10 inch', category: 'Hand'),
+    ToolItem(emoji: '🪚', title: 'Hand saw', subtitle: 'Wood, 20 inch', category: 'Hand'),
+    ToolItem(emoji: '📏', title: 'Tape measure', subtitle: '25 ft', category: 'Measure'),
+    ToolItem(emoji: '🪜', title: 'Step ladder', subtitle: '6 ft aluminum', category: 'Yard'),
+    ToolItem(emoji: '🔌', title: 'Work light', subtitle: 'LED, clamp', category: 'Power'),
+    ToolItem(emoji: '🧰', title: 'Toolbox', subtitle: 'Empty, 20 inch', category: 'Hand'),
+    ToolItem(emoji: '🪴', title: 'Garden trowel', subtitle: 'Steel blade', category: 'Yard'),
+    ToolItem(emoji: '🪵', title: 'Clamps', subtitle: 'Pair of bar clamps', category: 'Hand'),
+  ];
+}
+"""
+
+CATALOG_DART = """import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:rocket_capsule/core/kit/kit.dart';
+import 'catalog_store.dart';
+
+class CatalogScreen extends StatefulWidget {
+  const CatalogScreen({super.key});
+  @override
+  State<CatalogScreen> createState() => _CatalogScreenState();
+}
+
+class _CatalogScreenState extends State<CatalogScreen> {
+  String filter = 'All';
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Notes')),
-      body: Column(children: [
-        TextField(controller: controller, decoration: const InputDecoration(hintText: 'Add a tool')),
-        FilledButton(
-          onPressed: () {
-            final text = controller.text.trim();
-            if (text.isEmpty) return;
-            setState(() { items.add(text); controller.clear(); });
-          },
-          child: const Text('Add'),
-        ),
-        Expanded(
-          child: ListView.builder(
-            itemCount: items.length,
-            itemBuilder: (c, i) => ListTile(
-              title: Text(items[i]),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => setState(() => items.removeAt(i)),
-              ),
+    final store = CatalogStore.instance;
+    final labels = ['All', 'Hand', 'Yard', 'Power', 'Measure'];
+    final shown = [for (final item in store.items) if (filter == 'All' || item.category == filter) item];
+    return RocketScaffold(
+      title: 'Browse',
+      body: ListView(
+        padding: EdgeInsets.all(KitTokens.of(context).spacing.md),
+        children: [
+          const HeroHeader(title: 'Block library', subtitle: 'Borrow a tool, return it this week.', emoji: '🧰'),
+          ChipRow(labels: labels, selected: filter, onSelected: (value) => setState(() => filter = value)),
+          SectionTitle('${shown.length} tools'),
+          for (final item in shown)
+            ItemCard(
+              emoji: item.emoji,
+              title: item.title,
+              subtitle: item.subtitle,
+              trailing: KitBadge(label: item.category),
+              onTap: () {
+                store.selected = item;
+                context.go('/item');
+              },
             ),
+        ],
+      ),
+    );
+  }
+}
+"""
+
+CREATE_DART = """import 'package:flutter/material.dart';
+import 'package:rocket_capsule/core/kit/kit.dart';
+import 'catalog_store.dart';
+
+class CreateScreen extends StatefulWidget {
+  const CreateScreen({super.key});
+  @override
+  State<CreateScreen> createState() => _CreateScreenState();
+}
+
+class _CreateScreenState extends State<CreateScreen> {
+  final title = TextEditingController();
+  final detail = TextEditingController();
+  int days = 3;
+
+  @override
+  void dispose() {
+    title.dispose();
+    detail.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final space = KitTokens.of(context).spacing;
+    return RocketScaffold(
+      title: 'List a tool',
+      body: ListView(
+        padding: EdgeInsets.all(space.md),
+        children: [
+          const HeroHeader(title: 'Share from your shed', subtitle: 'Neighbors will see this today.', emoji: '✏️'),
+          SizedBox(height: space.md),
+          AppTextField(controller: title, label: 'Tool', hint: 'Impact driver'),
+          SizedBox(height: space.md),
+          AppTextField(controller: detail, label: 'Notes', hint: 'Battery included'),
+          SectionTitle('Loan length'),
+          QuantityStepper(value: days, onChanged: (value) => setState(() => days = value), min: 1, max: 14),
+          PrimaryButton(
+            label: 'Publish',
+            onPressed: () {
+              final name = title.text.trim();
+              if (name.isEmpty) return;
+              setState(() {
+                CatalogStore.instance.items.insert(0, ToolItem(emoji: '🛠️', title: name, subtitle: detail.text.trim().isEmpty ? '$days day loan' : detail.text.trim(), category: 'Hand'));
+                title.clear();
+                detail.clear();
+              });
+            },
           ),
-        ),
-      ]),
+        ],
+      ),
+    );
+  }
+}
+"""
+
+ITEM_DART = """import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:rocket_capsule/core/kit/kit.dart';
+import 'catalog_store.dart';
+
+class ItemScreen extends StatefulWidget {
+  const ItemScreen({super.key});
+  @override
+  State<ItemScreen> createState() => _ItemScreenState();
+}
+
+class _ItemScreenState extends State<ItemScreen> {
+  int days = 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final item = CatalogStore.instance.selected;
+    final space = KitTokens.of(context).spacing;
+    if (item == null) {
+      return const RocketScaffold(title: 'Tool', body: EmptyState(title: 'Pick a tool', body: 'Open browse and choose one.', emoji: '🔎'));
+    }
+    return RocketScaffold(
+      title: item.title,
+      body: ListView(
+        padding: EdgeInsets.all(space.md),
+        children: [
+          HeroHeader(title: item.title, subtitle: item.subtitle, emoji: item.emoji),
+          SectionTitle('Borrow'),
+          QuantityStepper(value: days, onChanged: (value) => setState(() => days = value), min: 1, max: 14),
+          PriceTag(text: 'Free for $days day${days == 1 ? '' : 's'}'),
+          SizedBox(height: space.md),
+          PrimaryButton(label: item.listed ? 'Request borrow' : 'Returned', onPressed: () => setState(() => item.listed = !item.listed)),
+          SizedBox(height: space.sm),
+          SecondaryButton(label: 'Back to browse', onPressed: () => context.go('/browse')),
+        ],
+      ),
+    );
+  }
+}
+"""
+
+PROFILE_DART = """import 'package:flutter/material.dart';
+import 'package:rocket_capsule/core/kit/kit.dart';
+import 'catalog_store.dart';
+
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final store = CatalogStore.instance;
+    final space = KitTokens.of(context).spacing;
+    return RocketScaffold(
+      title: 'You',
+      body: ListView(
+        padding: EdgeInsets.all(space.md),
+        children: [
+          const HeroHeader(title: 'Your shelf', subtitle: 'What you share on this block.', emoji: '👤'),
+          SizedBox(height: space.md),
+          Row(children: [
+            Expanded(child: StatTile(label: 'Listed', value: '${store.items.length}', emoji: '📦')),
+            SizedBox(width: space.sm),
+            Expanded(child: StatTile(label: 'Open', value: '${store.items.where((item) => item.listed).length}', emoji: '✅')),
+          ]),
+          SectionTitle('On the shelf'),
+          if (store.items.isEmpty) const EmptyState(title: 'Nothing listed', emoji: '📭'),
+          for (final item in store.items.take(6))
+            ItemCard(emoji: item.emoji, title: item.title, subtitle: item.category, trailing: PriceTag(text: 'share')),
+        ],
+      ),
     );
   }
 }
 """
 
 REGISTRY_DART = """import 'package:flutter/material.dart';
-import 'notes/notes_screen.dart';
+import 'browse/catalog_screen.dart';
+import 'browse/create_screen.dart';
+import 'browse/item_screen.dart';
+import 'browse/profile_screen.dart';
 
 class FeatureRoute {
   const FeatureRoute({
     required this.path,
     required this.label,
     required this.builder,
+    this.icon = '•',
+    this.tab = false,
   });
 
   final String path;
   final String label;
   final WidgetBuilder builder;
+  final String icon;
+  final bool tab;
 }
 
 List<FeatureRoute> extraFeatureRoutes() {
   return [
-    FeatureRoute(path: '/notes', label: 'Notes', builder: (c) => const NotesScreen()),
+    FeatureRoute(path: '/browse', label: 'Browse', icon: '🧰', tab: true, builder: (c) => const CatalogScreen()),
+    FeatureRoute(path: '/new', label: 'List', icon: '✏️', tab: true, builder: (c) => const CreateScreen()),
+    FeatureRoute(path: '/item', label: 'Item', icon: '🔎', tab: false, builder: (c) => const ItemScreen()),
+    FeatureRoute(path: '/profile', label: 'You', icon: '👤', tab: true, builder: (c) => const ProfileScreen()),
   ];
 }
 """
 
 FILE_OPS = {
     "operations": [
-        _write("lib/app/features/notes/notes_screen.dart", NOTES_DART),
+        _write("lib/app/features/browse/catalog_store.dart", STORE_DART),
+        _write("lib/app/features/browse/catalog_screen.dart", CATALOG_DART),
+        _write("lib/app/features/browse/create_screen.dart", CREATE_DART),
+        _write("lib/app/features/browse/item_screen.dart", ITEM_DART),
+        _write("lib/app/features/browse/profile_screen.dart", PROFILE_DART),
         _write("lib/app/features/registry.dart", REGISTRY_DART),
     ]
 }
