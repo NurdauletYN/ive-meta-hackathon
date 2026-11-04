@@ -1,0 +1,10 @@
+title = "Rocket harness"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "rocket-pem-private-key-block"
+description = "PEM private key block"
+regex = '''-----BEGIN [A-Z ]*PRIVATE KEY-----'''
+tags = ["key", "pem"]

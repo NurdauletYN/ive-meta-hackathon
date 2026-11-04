@@ -43,6 +43,8 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `src/harness/sweep.py` | done | 2026-11-04 | NEW | ideas × live pilots × harness/bare; infra vs quality; resume; dirty-tree refusal |
 | `src/harness/classify.py` | done | 2026-11-04 | NEW | pass / quality_fail / infra_fail |
 | `src/harness/report.py` | done | 2026-11-04 | NEW | `harness report` → counts-only results.md |
+| `src/harness/ship.py`, `redact.py` | done | 2026-11-04 | NEW | `harness ship --target testflight`; fake-runner tests; no live Apple calls |
+| `docs/ship.md` | done | 2026-11-04 | NEW | Manual ASC prerequisites; what is and is not automated |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 

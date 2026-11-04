@@ -2,6 +2,14 @@
 .env
 .env.*
 !.env.example
+*.p8
+AuthKey_*.p8
+GoogleService-Info.plist
+google-services.json
+firebase_options.dart
+.ship-build-number
+**/ExportOptions.plist
+ship_report.json
 
 # Python
 __pycache__/
