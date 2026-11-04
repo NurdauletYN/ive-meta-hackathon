@@ -8,6 +8,13 @@ class InMemoryAuthService implements AuthService {
   bool get isSignedIn => _email != null;
 
   @override
+  bool get isDemo => true;
+
+  @override
+  Future<void> signUp({required String email, required String password}) =>
+      signIn(email: email, password: password);
+
+  @override
   Future<void> signIn({required String email, required String password}) async {
     if (email.isEmpty || password.isEmpty) {
       throw ArgumentError('email and password required');
