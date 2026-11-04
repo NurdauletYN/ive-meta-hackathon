@@ -37,6 +37,7 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `tests/test_guard.py`, `test_preflight.py`, `test_pilot.py` | done | 2026-11-03 | NEW | Guard, preflight, FakePilot e2e (repair, guard, invalid JSON, budget) |
 | `src/codegen/`, `compile_runner/` | not started | — | — | Placeholder READMEs only; repair loop lives in `src/harness/build.py` |
 | `src/storepack/` | done | 2026-11-04 | NEW | Icon (raw + Lanczos 1024/512), listing JSON, privacy template zip; FakePilot tests + one live Muse Image smoke |
+| `flutter_launcher_icons` | done | 2026-11-04 | NEW | Storepack copies `icon_1024.png` to `assets/icon/app_icon.png` and runs `dart run flutter_launcher_icons` |
 | `docs/storepack.md` | done | 2026-11-04 | NEW | Commands; template-not-legal-advice; what is unverified |
 | `demo/` + `src/harness/ui.py` | done | 2026-11-04 | NEW | Phone-first studio: ticker, details drawer, compare, design pick. Not the Ive product. |
 | `src/harness/events.py` | done | 2026-11-03 | NEW | Run event jsonl + in-process hub (live SSE, no history replay) |
@@ -80,7 +81,7 @@ These are **ideas** common in app-shipping tooling, reimplemented here from scra
 | --- | --- |
 | httpx, pydantic, python-dotenv, pillow | Meta adapters + resize |
 | pytest, pre-commit (dev) | Tests, gitleaks hook |
-| Flutter: go_router, flutter_markdown, firebase_core, firebase_auth, purchases_flutter | Capsule template |
+| Flutter: go_router, flutter_markdown, firebase_core, firebase_auth, purchases_flutter, flutter_launcher_icons | Capsule template |
 
 ## Preexisting code
 

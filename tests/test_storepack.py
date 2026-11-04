@@ -10,9 +10,16 @@ from pathlib import Path
 import pytest
 from PIL import Image
 from harness.cli import main
+from meta_client.images import resize_lanczos_to_square
 from harness.prompts import BARE_REQUIREMENTS, CAPSULE_PREFIX
 from pilot.fake import FakePilot
 from pilot.session import PilotSession
+from storepack.launcher_icons import (
+    IMAGE_PATH,
+    apply_launcher_icons,
+    ensure_launcher_config,
+    _restore_swift_asset_symbol_extensions,
+)
 from storepack.pack import LISTING_SCHEMA, build_storepack, fake_listing, mock_icon_png
 from storepack.scan import read_app_name, scan_app
 
@@ -186,3 +193,100 @@ def test_cli_fake_storepack(
     assert payload["icon"]["mock"] is True
     assert (out / "storepack.zip").is_file()
     assert payload["privacy_label"] == "template, not legal advice"
+    assert payload["icon"]["launcher_icons"]["skipped"] is True
+
+
+def test_launcher_icons_skipped_without_pubspec(tmp_path: Path) -> None:
+    proj = _project(tmp_path)
+    icon = tmp_path / "icon_1024.png"
+    icon.write_bytes(mock_icon_png())
+    result = apply_launcher_icons(proj, icon)
+    assert result["skipped"] is True
+    assert result["ok"] is False
+    assert "pubspec" in result["reason"]
+
+
+def test_launcher_icons_copies_png_and_runs_dart(tmp_path: Path) -> None:
+    proj = _project(tmp_path)
+    (proj / "pubspec.yaml").write_text("name: harbor\n", encoding="utf-8")
+    icon = tmp_path / "icon_1024.png"
+    png, _, _ = resize_lanczos_to_square(mock_icon_png(), 1024)
+    icon.write_bytes(png)
+    seen: list[list[str]] = []
+
+    def runner(cmd: list[str], cwd: Path) -> tuple[int, str, float]:
+        seen.append(cmd)
+        assert cwd == proj
+        return 0, "Successfully generated launcher icons", 12.0
+
+    result = apply_launcher_icons(proj, icon, runner=runner)
+    assert result["ok"] is True
+    assert result["skipped"] is False
+    assert result["path"] == IMAGE_PATH
+    assert seen == [["dart", "run", "flutter_launcher_icons"]]
+    dest = proj / IMAGE_PATH
+    assert dest.is_file()
+    assert _png_size(dest.read_bytes()) == (1024, 1024)
+    spec = (proj / "pubspec.yaml").read_text(encoding="utf-8")
+    assert "flutter_launcher_icons:" in spec
+    assert IMAGE_PATH in spec
+
+
+def test_launcher_icons_reports_dart_failure(tmp_path: Path) -> None:
+    proj = _project(tmp_path)
+    (proj / "pubspec.yaml").write_text("name: harbor\n", encoding="utf-8")
+    icon = tmp_path / "icon_1024.png"
+    icon.write_bytes(mock_icon_png())
+
+    def runner(cmd: list[str], cwd: Path) -> tuple[int, str, float]:
+        return 1, "No pubspec.yaml found (fake)", 3.0
+
+    result = apply_launcher_icons(proj, icon, runner=runner)
+    assert result["ok"] is False
+    assert result["skipped"] is False
+    assert "No pubspec.yaml found" in result["output"]
+
+
+def test_restore_swift_asset_symbol_extensions(tmp_path: Path) -> None:
+    pbx = tmp_path / "project.pbxproj"
+    pbx.write_text(
+        "ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = AppIcon;\n"
+        "ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n",
+        encoding="utf-8",
+    )
+    _restore_swift_asset_symbol_extensions(pbx)
+    text = pbx.read_text(encoding="utf-8")
+    assert "GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;" in text
+    assert "APPICON_NAME = AppIcon;" in text
+
+
+def test_ensure_launcher_config_is_idempotent(tmp_path: Path) -> None:
+    spec = tmp_path / "pubspec.yaml"
+    spec.write_text("name: harbor\n", encoding="utf-8")
+    assert ensure_launcher_config(spec) is True
+    assert ensure_launcher_config(spec) is False
+    assert spec.read_text(encoding="utf-8").count("flutter_launcher_icons:") == 1
+
+
+def test_storepack_uses_injected_launcher_runner(tmp_path: Path) -> None:
+    proj = _project(tmp_path)
+    (proj / "pubspec.yaml").write_text("name: harbor\n", encoding="utf-8")
+    fake = FakePilot()
+    fake.enqueue("storepack", fake_listing("Harbor Notes"))
+    called: list[str] = []
+
+    def runner(cmd: list[str], cwd: Path) -> tuple[int, str, float]:
+        called.append(" ".join(cmd))
+        return 0, "ok", 1.0
+
+    result = build_storepack(
+        proj,
+        tmp_path / "pack",
+        session=_session(fake, tmp_path),
+        image_fn=lambda _p: mock_icon_png(),
+        icon_mock=True,
+        launcher_runner=runner,
+    )
+    assert called == ["dart run flutter_launcher_icons"]
+    assert result["icon"]["launcher_icons"]["ok"] is True
+    assert (proj / IMAGE_PATH).is_file()
