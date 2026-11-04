@@ -65,6 +65,7 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | `lib/core/kit/` | done | 2026-11-04 | NEW | Token-driven widgets (RocketScaffold, ItemCard, …). Protected. |
 | `docs/kit_api.md` | done | 2026-11-04 | NEW | Compact kit API; concatenated into CAPSULE_PREFIX |
 | `kit_usage`, `not_text_only` | done | 2026-11-04 | NEW | Preflight WARN checks on generated screens |
+| preview tour | done | 2026-11-04 | NEW | Hash routes + studio chips for locked flows; web preview starts at onboarding |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.
 

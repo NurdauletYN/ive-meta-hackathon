@@ -77,12 +77,34 @@ function waiting(text) {
   return p;
 }
 
+let previewBase = null;
+
+function splitPreview(url) {
+  const raw = String(url || "");
+  const hashAt = raw.indexOf("#");
+  if (hashAt === -1) return { base: raw, hash: "" };
+  return { base: raw.slice(0, hashAt), hash: raw.slice(hashAt) };
+}
+
 function iframe(url) {
   const frame = document.createElement("iframe");
+  const parts = splitPreview(url);
+  previewBase = parts.base;
   frame.src = url;
   frame.title = "app preview";
   frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
   return frame;
+}
+
+function applyTourHash(hash) {
+  const next = hash || "#/onboarding";
+  previewBase = previewBase || "";
+  const frame = document.querySelector(".phone .screen iframe");
+  if (!frame || !previewBase) return;
+  frame.src = previewBase + next;
+  for (const btn of document.querySelectorAll("#tour-chips [data-hash]")) {
+    btn.classList.toggle("on", btn.dataset.hash === next);
+  }
 }
 
 function phoneCard({ id, label, small }) {
@@ -235,7 +257,9 @@ function showPreview(runId, url, mode, kind) {
   const wrap = ensurePhone(runId, mode);
   const slot = wrap.querySelector(".badge-slot");
   if (slot) slot.replaceChildren(kind === "skin" ? draftBadge() : document.createTextNode(""));
-  setScreen(wrap.querySelector(".screen"), iframe(url));
+  const hashed = kind === "web" && url && !String(url).includes("#") ? `${url}#/onboarding` : url;
+  setScreen(wrap.querySelector(".screen"), iframe(hashed));
+  if (kind === "web") applyTourHash("#/onboarding");
 }
 
 function ensurePhone(runId, mode) {
@@ -482,6 +506,10 @@ function slug(prefix) {
 $("btn-design").addEventListener("click", () => run("design", { run_id: slug("d") }));
 $("btn-build").addEventListener("click", () => run("build", { mode: "harness" }));
 $("btn-compare").addEventListener("click", () => run("compare", {}));
+
+document.querySelectorAll("[data-hash]").forEach((btn) => {
+  btn.addEventListener("click", () => applyTourHash(btn.dataset.hash));
+});
 
 async function boot() {
   connectEvents();

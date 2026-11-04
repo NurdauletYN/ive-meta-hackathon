@@ -65,6 +65,16 @@ def test_ui_http_design_and_reject_second_job(tmp_path: Path) -> None:
         assert "Muse Spark" in page.text
         assert "From idea to TestFlight" in page.text
         assert "What should this app do?" in page.text
+        assert 'data-hash="#/onboarding"' in page.text
+        assert 'data-hash="#/signup"' in page.text
+        assert 'data-hash="#/home"' in page.text
+        assert 'data-hash="#/paywall"' in page.text
+        assert 'data-hash="#/settings"' in page.text
+        assert 'data-hash="#/privacy"' in page.text
+        assert "Onboarding" in page.text
+        assert "Sign up" in page.text
+        assert "What's in your app" in page.text
+        assert "Paywall with subscription disclosure" in page.text
         started = httpx.post(
             f"{base}/api/design",
             json={"idea": "swap books", "pilot": "fake", "run_id": "http-d", "build_web": False},
