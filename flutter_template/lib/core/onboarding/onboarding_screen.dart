@@ -27,17 +27,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _page = 0;
 
   Future<Map<String, String>> _loadSlots() async {
-    final raw = await rootBundle.loadString('assets/onboarding/onboarding.json');
+    final raw = await rootBundle.loadString(
+      'assets/onboarding/onboarding.json',
+    );
     final json = jsonDecode(raw) as Map<String, dynamic>;
     final slots = json['slots'] as Map<String, dynamic>;
     return slots.map((key, value) => MapEntry(key, value as String));
   }
 
   List<_Slide> _slides(Map<String, String> slots) {
-    final out = <_Slide>[_Slide(slots['hero_title'] ?? '', slots['hero_body'] ?? '')];
+    final out = <_Slide>[
+      _Slide(slots['hero_title'] ?? '', slots['hero_body'] ?? ''),
+    ];
     for (final prefix in const ['slide2', 'slide3']) {
       final title = slots['${prefix}_title'];
-      if (title != null && title.isNotEmpty) out.add(_Slide(title, slots['${prefix}_body'] ?? ''));
+      if (title != null && title.isNotEmpty) {
+        out.add(_Slide(title, slots['${prefix}_body'] ?? ''));
+      }
     }
     return out;
   }
@@ -64,7 +70,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           final slides = _slides(slots);
           final hint = slots['hero_hint'] ?? slots['hero_title'] ?? '';
           final start = KitPhoto.names.indexOf(
-            KitPhoto.resolve(title: hint).split('/').last.replaceAll('.jpg', ''),
+            KitPhoto.resolve(
+              title: hint,
+            ).split('/').last.replaceAll('.jpg', ''),
           );
           final last = _page == slides.length - 1;
           return Stack(
@@ -75,7 +83,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [scheme.primary.withValues(alpha: 0.32), scheme.surface],
+                      colors: [
+                        scheme.primary.withValues(alpha: 0.32),
+                        scheme.surface,
+                      ],
                       stops: const [0, 0.6],
                     ),
                   ),
@@ -87,10 +98,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: Padding(
-                        padding: EdgeInsets.only(right: tokens.spacing.sm, top: tokens.spacing.xs),
+                        padding: EdgeInsets.only(
+                          right: tokens.spacing.sm,
+                          top: tokens.spacing.xs,
+                        ),
                         child: TextButton(
                           onPressed: () => context.go('/signup'),
-                          child: Text('Skip', style: TextStyle(color: scheme.onSurface.withValues(alpha: 0.6))),
+                          child: Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: scheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -102,32 +121,60 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         itemBuilder: (context, index) => _SlidePage(
                           slide: slides[index],
                           photos: [
-                            KitPhoto.path(KitPhoto.names[(math.max(start, 0) + index * 5) % KitPhoto.names.length]),
-                            KitPhoto.path(KitPhoto.names[(math.max(start, 0) + index * 5 + 7) % KitPhoto.names.length]),
-                            KitPhoto.path(KitPhoto.names[(math.max(start, 0) + index * 5 + 13) % KitPhoto.names.length]),
+                            KitPhoto.path(
+                              KitPhoto.names[(math.max(start, 0) + index * 5) %
+                                  KitPhoto.names.length],
+                            ),
+                            KitPhoto.path(
+                              KitPhoto.names[(math.max(start, 0) +
+                                      index * 5 +
+                                      7) %
+                                  KitPhoto.names.length],
+                            ),
+                            KitPhoto.path(
+                              KitPhoto.names[(math.max(start, 0) +
+                                      index * 5 +
+                                      13) %
+                                  KitPhoto.names.length],
+                            ),
                           ],
                         ),
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.fromLTRB(tokens.spacing.lg, 0, tokens.spacing.lg, tokens.spacing.lg),
+                      padding: EdgeInsets.fromLTRB(
+                        tokens.spacing.lg,
+                        0,
+                        tokens.spacing.lg,
+                        tokens.spacing.lg,
+                      ),
                       child: Column(
                         children: [
                           if (slides.length > 1)
                             Padding(
-                              padding: EdgeInsets.only(bottom: tokens.spacing.md),
+                              padding: EdgeInsets.only(
+                                bottom: tokens.spacing.md,
+                              ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   for (var i = 0; i < slides.length; i++)
                                     AnimatedContainer(
-                                      duration: const Duration(milliseconds: 240),
+                                      duration: const Duration(
+                                        milliseconds: 240,
+                                      ),
                                       curve: Curves.easeOutCubic,
-                                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                                      margin: const EdgeInsets.symmetric(
+                                        horizontal: 3,
+                                      ),
                                       width: i == _page ? 26 : 8,
                                       height: 8,
                                       decoration: BoxDecoration(
-                                        color: i == _page ? scheme.primary : scheme.onSurface.withValues(alpha: 0.18),
+                                        color: i == _page
+                                            ? scheme.primary
+                                            : scheme.onSurface.withValues(
+                                                alpha: 0.18,
+                                              ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                     ),
@@ -184,9 +231,27 @@ class _SlidePage extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      _Tilted(angle: -0.12, dx: -0.32, dy: 0.06, photo: photos[1], scale: 0.58),
-                      _Tilted(angle: 0.11, dx: 0.32, dy: -0.04, photo: photos[2], scale: 0.58),
-                      _Tilted(angle: 0.0, dx: 0, dy: 0, photo: photos[0], scale: 0.7),
+                      _Tilted(
+                        angle: -0.12,
+                        dx: -0.32,
+                        dy: 0.06,
+                        photo: photos[1],
+                        scale: 0.58,
+                      ),
+                      _Tilted(
+                        angle: 0.11,
+                        dx: 0.32,
+                        dy: -0.04,
+                        photo: photos[2],
+                        scale: 0.58,
+                      ),
+                      _Tilted(
+                        angle: 0.0,
+                        dx: 0,
+                        dy: 0,
+                        photo: photos[0],
+                        scale: 0.7,
+                      ),
                     ],
                   ),
                 ),
