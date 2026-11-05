@@ -87,34 +87,62 @@ class RocketScaffold extends StatelessWidget {
       body: SafeArea(bottom: !showTabs, child: padded),
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: showTabs
-          ? Padding(
-              padding: EdgeInsets.fromLTRB(
-                tokens.spacing.md,
-                0,
-                tokens.spacing.md,
-                tokens.spacing.sm,
-              ),
-              child: Material(
-                color: scheme.surfaceContainerHighest,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(tokens.radii.pill),
+          ? DecoratedBox(
+              // Fade the page out under the bar so cards never look cut off by it.
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    scheme.surface.withValues(alpha: 0),
+                    scheme.surface.withValues(alpha: 0.92),
+                    scheme.surface,
+                  ],
+                  stops: const [0, 0.45, 1],
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Row(
-                    children: [
-                      for (var i = 0; i < tabs.length; i++)
-                        Expanded(
-                          child: _TabButton(
-                            tab: tabs[i],
-                            selected: i == current,
-                            onTap: () => context.go(tabs[i].path),
-                            tokens: tokens,
-                            scheme: scheme,
-                          ),
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  tokens.spacing.lg,
+                  tokens.spacing.md,
+                  tokens.spacing.lg,
+                  // Room for the phone home indicator / rounded screen corners.
+                  tokens.spacing.lg - 2,
+                ),
+                child: Center(
+                  heightFactor: 1,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(tokens.radii.pill),
+                      border: Border.all(color: scheme.outlineVariant),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.14),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
                         ),
-                    ],
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(5),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (var i = 0; i < tabs.length; i++)
+                            SizedBox(
+                              width: tabs.length <= 3 ? 96 : 74,
+                              child: _TabButton(
+                                tab: tabs[i],
+                                selected: i == current,
+                                onTap: () => context.go(tabs[i].path),
+                                tokens: tokens,
+                                scheme: scheme,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -141,41 +169,48 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.symmetric(vertical: tokens.spacing.sm + 2),
-        decoration: BoxDecoration(
-          color: selected ? scheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(tokens.radii.pill),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              tab.icon,
-              style: TextStyle(
-                fontSize: 16,
-                height: 1,
-                color: selected ? scheme.onPrimary : scheme.onSurface,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: tab.label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          height: 52,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? scheme.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(tokens.radii.pill),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Opacity(
+                opacity: selected ? 1 : 0.7,
+                child: Text(
+                  tab.icon,
+                  style: const TextStyle(fontSize: 18, height: 1.1),
+                ),
               ),
-            ),
-            SizedBox(height: tokens.spacing.xs),
-            Text(
-              tab.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: tokens.typeScale.label,
-                fontWeight: FontWeight.w700,
-                color: selected
-                    ? scheme.onPrimary
-                    : scheme.onSurface.withValues(alpha: 0.62),
+              const SizedBox(height: 2),
+              Text(
+                tab.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: tokens.typeScale.label - 1,
+                  height: 1.1,
+                  fontWeight: FontWeight.w700,
+                  color: selected
+                      ? scheme.onPrimary
+                      : scheme.onSurface.withValues(alpha: 0.6),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -195,7 +230,8 @@ class KitPage extends StatelessWidget {
         tokens.spacing.md + 4,
         tokens.spacing.md,
         tokens.spacing.md + 4,
-        tokens.spacing.xl + 12,
+        // Clear the floating tab bar (Scaffold.extendBody reports its height).
+        tokens.spacing.xl + 12 + MediaQuery.paddingOf(context).bottom,
       ),
       itemCount: children.length,
       separatorBuilder: (context, index) {

@@ -658,6 +658,7 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
   height: 100%;
   border-radius: 28px;
   overflow: hidden;
+  overscroll-behavior: contain;
   background: #111;
   position: relative;
 }

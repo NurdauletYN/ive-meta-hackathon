@@ -179,6 +179,22 @@ function splitPreview(url) {
   return { base: raw.slice(0, hashAt), hash: raw.slice(hashAt) };
 }
 
+// Flutter web leaves wheel/touch scrolling unhandled at list edges (and over fixed chrome),
+// so the browser chains it to the studio page. Cancel the native default inside the preview;
+// Flutter still receives the event and scrolls the app itself.
+function lockFrameScroll(frame) {
+  try {
+    const doc = frame.contentDocument;
+    if (!doc || doc.__scrollLocked) return;
+    doc.__scrollLocked = true;
+    const stop = (ev) => ev.preventDefault();
+    doc.addEventListener("wheel", stop, { passive: false, capture: true });
+    doc.addEventListener("touchmove", stop, { passive: false, capture: true });
+  } catch {
+    /* cross-origin preview: nothing to lock */
+  }
+}
+
 function iframe(url) {
   const frame = document.createElement("iframe");
   const parts = splitPreview(url);
@@ -186,6 +202,7 @@ function iframe(url) {
   frame.src = url;
   frame.title = "app preview";
   frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms");
+  frame.addEventListener("load", () => lockFrameScroll(frame));
   return frame;
 }
 

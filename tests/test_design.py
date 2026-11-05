@@ -158,6 +158,11 @@ def test_kit_writer_emits_kit_screens(tmp_path: Path) -> None:
     assert re.search(r"(?<![A-Za-z])Scaffold\s*\(", text) is None
 
 
+def test_preview_cannot_scroll_the_studio_page() -> None:
+    assert "lockFrameScroll" in (ROOT / "demo" / "app.js").read_text(encoding="utf-8")
+    assert "overscroll-behavior" in (ROOT / "flutter_template" / "web" / "index.html").read_text(encoding="utf-8")
+
+
 def test_studio_fingerprint_stable(tmp_path: Path) -> None:
     from harness.studio_version import studio_fingerprint
 
