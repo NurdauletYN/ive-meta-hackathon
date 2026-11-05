@@ -14,6 +14,7 @@ from harness.design import pick_direction, run_design
 from harness.diversity import diversity_errors, hex_hue, hue_delta
 from harness.gate import GateReport, StepResult
 from harness.prompts import CAPSULE_PREFIX
+from pilot.canned import TOOL_CATALOG
 from meta_client.errors import MetaAuthError
 from pilot.config import load_pilot
 from pilot.fake import FakePilot
@@ -339,7 +340,7 @@ def test_load_fake_pilot_from_yaml() -> None:
 def test_harness_mode_e2e_and_identical_prefix(tmp_path: Path) -> None:
     fake = FakePilot(cached_tokens=128)
     fake.enqueue("spec", APP_SPEC)
-    fake.enqueue("file_ops", GOOD_OPS)
+    fake.enqueue("catalog", TOOL_CATALOG)
     session = _session(fake, tmp_path, "h1")
     result = run_build(
         "tool_library",
@@ -356,9 +357,10 @@ def test_harness_mode_e2e_and_identical_prefix(tmp_path: Path) -> None:
     assert result["tokens"]["cached"] == 256  # 128 logged on spec + file_ops
     written = json.loads((tmp_path / "run" / "result.json").read_text(encoding="utf-8"))
     assert written["pilot"] == "fake"
-    notes = tmp_path / "run" / "project" / "lib" / "app" / "features" / "notes" / "notes_screen.dart"
-    assert notes.is_file()
-    assert "StatefulWidget" in notes.read_text(encoding="utf-8")
+    browse = tmp_path / "run" / "project" / "lib" / "app" / "features" / "app" / "browse_screen.dart"
+    assert browse.is_file()
+    text = browse.read_text(encoding="utf-8")
+    assert "KitShopScreen" in text and "RocketScaffold" in text
     strings = (tmp_path / "run" / "project" / "lib" / "app" / "strings.dart").read_text(encoding="utf-8")
     assert "Tool Library" in strings
     assert "Rocket Capsule" not in strings
@@ -410,32 +412,33 @@ def test_bare_mode_e2e(tmp_path: Path) -> None:
 
 
 def test_guard_violation_is_fed_back_then_applied(tmp_path: Path) -> None:
+    from harness.build import request_and_apply_ops
+    from harness.copy_project import copy_tree
+
     fake = FakePilot()
-    fake.enqueue("spec", APP_SPEC)
     fake.enqueue("file_ops", PROTECTED_OPS, GOOD_OPS)
     session = _session(fake, tmp_path, "guard-1")
-    result = run_build(
-        "tool_library",
+    project = tmp_path / "project"
+    copy_tree(CAPSULE, project)
+    log = request_and_apply_ops(
         session,
-        mode="harness",
-        run_dir=tmp_path / "run",
-        capsule=CAPSULE,
-        gate_fn=_pass_gate,
-        build_web=False,
+        CAPSULE_PREFIX,
+        "Write lib/main.dart only.",
+        project,
+        allowed_prefixes=["lib/app/features/**", "lib/app/strings.dart"],
     )
-    assert result["ok"]
-    assert result["ops"]["guard_rounds"] >= 1
-    assert any(v["code"] == "protected_path" for v in result["ops"]["violations"])
-    assert "Guard violations" in fake.calls[2][2]
-    core = tmp_path / "run" / "project" / "lib" / "core" / "auth" / "auth_service.dart"
+    assert log["guard_rounds"] >= 1
+    assert any(v["code"] == "protected_path" for v in log["violations"])
+    assert "Guard violations" in fake.calls[1][2]
+    core = project / "lib" / "core" / "auth" / "auth_service.dart"
     assert "void hack" not in core.read_text(encoding="utf-8")
-    assert (tmp_path / "run" / "project" / "lib" / "app" / "features" / "notes" / "notes_screen.dart").is_file()
+    assert (project / "lib" / "app" / "features" / "notes" / "notes_screen.dart").is_file()
 
 
 def test_build_writes_result_json_when_pilot_raises(tmp_path: Path) -> None:
     fake = FakePilot()
     fake.enqueue("spec", APP_SPEC)
-    fake.enqueue("file_ops", RuntimeError("timeout: read timed out"))
+    fake.enqueue("catalog", RuntimeError("timeout: read timed out"))
     session = _session(fake, tmp_path, "err-1")
     result = run_build(
         "tool_library",
@@ -472,8 +475,7 @@ def test_one_gate_repair_round(tmp_path: Path) -> None:
 
     fake = FakePilot()
     fake.enqueue("spec", APP_SPEC)
-    # build, one design (polish) pass for the raw ListTile screen, then one gate repair
-    fake.enqueue("file_ops", GOOD_OPS, GOOD_OPS, GOOD_OPS)
+    fake.enqueue("catalog", TOOL_CATALOG, TOOL_CATALOG, TOOL_CATALOG)
     session = _session(fake, tmp_path, "repair-1")
     result = run_build(
         "tool_library",
@@ -487,7 +489,7 @@ def test_one_gate_repair_round(tmp_path: Path) -> None:
     assert result["ok"]
     assert result["repair_rounds"] == 1
     assert n["i"] == 2
-    assert any("Gate failed" in c[2] for c in fake.calls if c[0] == "file_ops")
+    assert any("Gate failed" in c[2] for c in fake.calls if c[0] == "catalog")
 
 
 def test_scaffold_only_is_capsule_plus_guard_with_zero_repairs(tmp_path: Path) -> None:
@@ -504,7 +506,7 @@ def test_scaffold_only_is_capsule_plus_guard_with_zero_repairs(tmp_path: Path) -
 
     fake = FakePilot()
     fake.enqueue("spec", APP_SPEC)
-    fake.enqueue("file_ops", GOOD_OPS)
+    fake.enqueue("catalog", TOOL_CATALOG)
     session = _session(fake, tmp_path, "scaffold-1")
     result = run_build(
         "tool_library",
@@ -520,4 +522,4 @@ def test_scaffold_only_is_capsule_plus_guard_with_zero_repairs(tmp_path: Path) -
     assert n["i"] == 1
     assert result["ok"] is False
     assert (tmp_path / "run" / "project" / "lib" / "core" / "auth" / "auth_service.dart").is_file()
-    assert sum(1 for c in fake.calls if c[0] == "file_ops") == 1
+    assert sum(1 for c in fake.calls if c[0] == "catalog") == 1

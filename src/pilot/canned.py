@@ -61,6 +61,107 @@ APP_SPEC = {
     "data_models": [{"name": "Tool", "fields": [{"name": "title", "type": "string"}]}],
 }
 
+TOOL_CATALOG = {
+    "shop_hero_title": "Block library",
+    "shop_hero_subtitle": "Borrow a tool, return it this week.",
+    "shop_hero_photo": "tool",
+    "shop_hero_action": "Browse all",
+    "search_hint": "Search tools",
+    "section_title": "Tools",
+    "detail_primary_label": "Request borrow",
+    "detail_secondary_label": "Back to browse",
+    "profile_title": "Your shelf",
+    "profile_subtitle": "What you share on this block.",
+    "profile_photo": "tool",
+    "browse_label": "Browse",
+    "browse_icon": "🧰",
+    "profile_label": "You",
+    "profile_icon": "👤",
+    "detail_path": "/item",
+    "products": [
+        {
+            "id": "hammer",
+            "title": "Claw hammer",
+            "subtitle": "16 oz steel",
+            "price": "$0",
+            "photo": "tool",
+            "category": "Hand",
+            "badge": "Popular",
+            "emoji": "🔨",
+        },
+        {
+            "id": "screwdriver",
+            "title": "Screwdriver set",
+            "subtitle": "Phillips and flat",
+            "price": "$0",
+            "photo": "tool",
+            "category": "Hand",
+            "badge": None,
+            "emoji": "🪛",
+        },
+        {
+            "id": "wrench",
+            "title": "Adjustable wrench",
+            "subtitle": "10 inch",
+            "price": "$0",
+            "photo": "tool",
+            "category": "Hand",
+            "badge": None,
+            "emoji": "🔧",
+        },
+        {
+            "id": "saw",
+            "title": "Hand saw",
+            "subtitle": "Wood, 20 inch",
+            "price": "$0",
+            "photo": "tool",
+            "category": "Hand",
+            "badge": None,
+            "emoji": "🪚",
+        },
+        {
+            "id": "tape",
+            "title": "Tape measure",
+            "subtitle": "25 ft",
+            "price": "$0",
+            "photo": "tool",
+            "category": "Measure",
+            "badge": None,
+            "emoji": "📏",
+        },
+        {
+            "id": "ladder",
+            "title": "Step ladder",
+            "subtitle": "6 ft aluminum",
+            "price": "$0",
+            "photo": "tool",
+            "category": "Yard",
+            "badge": None,
+            "emoji": "🪜",
+        },
+        {
+            "id": "light",
+            "title": "Work light",
+            "subtitle": "LED clamp",
+            "price": "$0",
+            "photo": "lamp",
+            "category": "Power",
+            "badge": None,
+            "emoji": "🔌",
+        },
+        {
+            "id": "trowel",
+            "title": "Garden trowel",
+            "subtitle": "Steel blade",
+            "price": "$0",
+            "photo": "plant",
+            "category": "Yard",
+            "badge": None,
+            "emoji": "🪴",
+        },
+    ],
+}
+
 STORE_DART = """class ToolItem {
   ToolItem({required this.emoji, required this.title, required this.subtitle, required this.category, this.listed = true});
   final String emoji;
@@ -319,5 +420,6 @@ def canned_pilot() -> FakePilot:
     fake = FakePilot(cached_tokens=64)
     fake.enqueue("design", DIRECTIONS)
     fake.enqueue("spec", APP_SPEC, APP_SPEC)
-    fake.enqueue("file_ops", FILE_OPS, FILE_OPS, BARE_OPS, FILE_OPS)
+    fake.enqueue("catalog", TOOL_CATALOG, TOOL_CATALOG, TOOL_CATALOG, TOOL_CATALOG)
+    fake.enqueue("file_ops", BARE_OPS)
     return fake

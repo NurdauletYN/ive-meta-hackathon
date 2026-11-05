@@ -140,6 +140,30 @@ def test_versions_fork_from_chosen_run_and_zip_has_no_secrets(tmp_path: Path) ->
     assert build_zip(runs, "missing") is None
 
 
+def test_kit_writer_emits_kit_screens(tmp_path: Path) -> None:
+    from harness.kit_writer import write_app_catalog
+    from pilot.canned import TOOL_CATALOG
+    from pilot.schemas import AppCatalog
+
+    project = tmp_path / "proj"
+    (project / "lib" / "app" / "features").mkdir(parents=True)
+    write_app_catalog(project, AppCatalog.model_validate(TOOL_CATALOG))
+    browse = project / "lib" / "app" / "features" / "app" / "browse_screen.dart"
+    assert browse.is_file()
+    text = browse.read_text(encoding="utf-8")
+    assert "KitShopScreen" in text
+    assert "ListTile" not in text
+    import re
+
+    assert re.search(r"(?<![A-Za-z])Scaffold\s*\(", text) is None
+
+
+def test_studio_fingerprint_stable(tmp_path: Path) -> None:
+    from harness.studio_version import studio_fingerprint
+
+    assert studio_fingerprint(ROOT) == studio_fingerprint(ROOT)
+
+
 def test_http_projects_and_download(tmp_path: Path) -> None:
     import httpx
 
@@ -153,6 +177,9 @@ def test_http_projects_and_download(tmp_path: Path) -> None:
         base = f"http://127.0.0.1:{httpd.server_address[1]}"
         listed = httpx.get(f"{base}/api/projects", timeout=5).json()
         assert listed[0]["id"] == "h-9"
+        studio = httpx.get(f"{base}/api/studio", timeout=5).json()
+        assert studio.get("catalog_writer") is True
+        assert studio.get("fingerprint")
         assert httpx.get(f"{base}/api/project/h-9", timeout=5).json()["versions"][0]["version"] == 1
         assert httpx.get(f"{base}/api/project/nope", timeout=5).status_code == 404
         zipped = httpx.get(f"{base}/api/download/h-9.zip", timeout=5)

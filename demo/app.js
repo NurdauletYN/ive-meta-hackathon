@@ -25,6 +25,7 @@ const CHECK_LABELS = {
   account_deletion_erases_data: "Deletion clears data",
   home_not_webview: "Home is not a WebView",
   remote_code: "No remote code",
+  no_raw_material: "Kit blocks only",
   kit_usage: "Kit widgets",
   not_text_only: "Not text-only",
 };
@@ -344,6 +345,7 @@ function handle(ev) {
   if (type === "stage") {
     if (ev.name === "spec" && ev.status === "start") setBuildStep("understand");
     if (ev.name === "file_ops" && ev.status === "start") setBuildStep("designing");
+    if (ev.name === "catalog" && ev.status === "start") setBuildStep("writing");
     if (ev.name === "gate" && ev.status === "start") setBuildStep("checks");
     const label = {
       design: "Sketching three looks…",
@@ -842,10 +844,27 @@ document.addEventListener("keydown", (ev) => {
   if (ev.key === "Escape" && document.body.classList.contains("side-open") && window.innerWidth < 1180) setSide(false);
 });
 
+async function refreshStudioBuild() {
+  const el = $("studio-build");
+  if (!el) return;
+  try {
+    const info = await fetch("/api/studio").then((r) => r.json());
+    el.hidden = false;
+    el.textContent = `Studio ${info.version} · ${info.fingerprint}`;
+    el.classList.remove("is-stale");
+    el.title = info.catalog_writer ? "Catalog writer active — restart studio after git pull if this fingerprint looks old." : "";
+  } catch {
+    el.hidden = false;
+    el.textContent = "Restart studio to load latest builder";
+    el.classList.add("is-stale");
+  }
+}
+
 async function boot() {
   initialPhones = $("phones").innerHTML;
   connectEvents();
   syncComposer();
+  await refreshStudioBuild();
   const list = await refreshProjects();
   if (list.length && window.innerWidth >= 1180) setSide(true);
   $("idea").focus();

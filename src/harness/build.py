@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from pilot.protocol import BudgetExceeded
-from pilot.schemas import APP_SPEC_SCHEMA, FILE_OPS_SCHEMA, AppSpec, schema_errors
+from pilot.schemas import APP_SPEC_SCHEMA, CATALOG_SCHEMA, FILE_OPS_SCHEMA, AppCatalog, AppSpec, schema_errors
 from pilot.session import PilotSession
 
 from .apply import apply_operations
@@ -25,6 +25,7 @@ from .branding import apply_branding
 from .prompts import BARE_REQUIREMENTS, CAPSULE_PREFIX
 from .skin import write_skin_from_project
 from .kitlint import kit_violations, rewrite_raw_material
+from .kit_writer import write_app_catalog
 from .palettes import apply_palette, current_palette, palette_from_instruction, pick_palette
 from .tokens import apply_tokens
 from pilot.schemas import Direction
@@ -254,6 +255,53 @@ def _polish(
     return remaining
 
 
+_KIT_PHOTO_KEYS = (
+    "shoe, jacket, hoodie, shorts, cleat, coffee, tool, plant, bag, headphone, "
+    "burger, salad, pastry, dumbbell, bike, book, camera, watch, sunglasses, "
+    "skincare, candle, lamp, suitcase, guitar"
+)
+
+
+def _catalog_user(spec: AppSpec, idea: str, *, extra: str = "") -> str:
+    base = (
+        f"AppSpec:\n{spec.model_dump_json()}\n\nIdea: {idea}\n\n"
+        "Return AppCatalog JSON only (no Dart, no file paths). "
+        "8–12 products with unique id, title, subtitle, price (include $), category, badge, emoji. "
+        f"photo must be one of: {_KIT_PHOTO_KEYS}. "
+        "shop_hero_* and profile_* copy must match the app theme. "
+        "browse_label and profile_label are short tab names; browse_icon and profile_icon are single emojis. "
+        "detail_path is a route like /item."
+    )
+    return base if not extra else base + "\n\n" + extra
+
+
+def _request_catalog(
+    session: PilotSession,
+    system: str,
+    user: str,
+    run_dir: Path,
+) -> AppCatalog:
+    catalog = _schema_loop(session, system, user, CATALOG_SCHEMA, "catalog", AppCatalog)
+    (run_dir / "catalog.json").write_text(catalog.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    return catalog
+
+
+def _write_catalog_from_model(
+    session: PilotSession,
+    system: str,
+    user: str,
+    project: Path,
+    run_dir: Path,
+) -> AppCatalog:
+    session.emit("stage", name="catalog", status="start")
+    t0 = time.perf_counter()
+    catalog = _request_catalog(session, system, user, run_dir)
+    write_app_catalog(project, catalog)
+    ms = round((time.perf_counter() - t0) * 1000, 1)
+    session.emit("stage", name="catalog", status="ok", ms=ms, products=len(catalog.products))
+    return catalog
+
+
 def _read_feature_files(project: Path, limit: int = 12) -> str:
     features = project / "lib" / "app" / "features"
     root = features if features.is_dir() else project / "lib"
@@ -374,25 +422,24 @@ def run_build(
         skin_url = f"/runs/{run_dir.name}/project/skin.html"
         session.emit("preview", url=skin_url, mode=mode, kind="skin")
 
-        session.emit("stage", name="file_ops", status="start")
-        t0 = time.perf_counter()
-        build_user = (
-            f"AppSpec:\n{spec.model_dump_json()}\n\n"
-            "Emit 4 write operations only: "
-            "lib/app/features/app/store.dart (8–12 KitProduct items, in-memory, photo keys + prices), "
-            "lib/app/features/app/browse_screen.dart (RocketScaffold(body: KitShopScreen(...)) only), "
-            "lib/app/features/app/detail_screen.dart (RocketScaffold(body: KitDetailScreen(...)) only), "
-            "lib/app/features/registry.dart (keep FeatureRoute; ProfileScreen = KitProfileScreen; "
-            "register browse FIRST as home, then detail, then profile; tab: true with emoji icons). "
-            "Do not place HeroHeader/ProductGrid yourself. context.go, no Navigator.push, no title: on RocketScaffold. "
-            "Browse screen under 90 lines, other files under 60. Terse Dart, no comments. content set; find/replace JSON null. "
-            "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core."
-        )
-        ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)
-        stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
-        session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=ops_log.get("applied"))
-        if mode == "harness":
-            _polish(session, system, build_user, project, allowed_prefixes=allowed)
+        catalog_user = _catalog_user(spec, idea)
+        if mode in ("harness", "scaffold_only"):
+            session.emit("stage", name="file_ops", status="start")
+            t0 = time.perf_counter()
+            _write_catalog_from_model(session, system, catalog_user, project, run_dir)
+            stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=4)
+            ops_log = {"applied": 4, "catalog": True}
+        else:
+            build_user = (
+                f"AppSpec:\n{spec.model_dump_json()}\n\n"
+                "Implement the app with file operations under lib/. Terse Dart, no comments."
+            )
+            session.emit("stage", name="file_ops", status="start")
+            t0 = time.perf_counter()
+            ops_log = request_and_apply_ops(session, system, build_user, project, allowed_prefixes=allowed)
+            stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=ops_log.get("applied"))
 
         session.emit("stage", name="gate", status="start")
         t0 = time.perf_counter()
@@ -402,18 +449,35 @@ def run_build(
             repair_rounds += 1
             session.emit("repair", round=repair_rounds)
             fail_text = _failing_text(report)
-            files = _read_relevant_files(project)
-            request_and_apply_ops(
-                session,
-                system,
-                build_user,
-                project,
-                allowed_prefixes=allowed,
-                extra_feedback=(
-                    f"Gate failed (round {repair_rounds}). Fix ONLY these errors:\n{fail_text}\n\n"
-                    f"Relevant files:\n{files}"
-                ),
-            )
+            if mode in ("harness", "scaffold_only") and spec is not None:
+                _write_catalog_from_model(
+                    session,
+                    system,
+                    _catalog_user(
+                        spec,
+                        idea,
+                        extra=f"Gate failed (round {repair_rounds}). Fix the catalog data:\n{fail_text}",
+                    ),
+                    project,
+                    run_dir,
+                )
+            else:
+                build_user = (
+                    f"AppSpec:\n{spec.model_dump_json()}\n\n"
+                    "Fix ONLY gate errors. Terse Dart under lib/."
+                )
+                files = _read_relevant_files(project)
+                request_and_apply_ops(
+                    session,
+                    system,
+                    build_user,
+                    project,
+                    allowed_prefixes=allowed,
+                    extra_feedback=(
+                        f"Gate failed (round {repair_rounds}). Fix ONLY these errors:\n{fail_text}\n\n"
+                        f"Relevant files:\n{files}"
+                    ),
+                )
             report = gate(project)
             _emit_gate(session, report)
         stages["gate_ms"] = round((time.perf_counter() - t0) * 1000, 1)
@@ -507,30 +571,42 @@ def run_improve(
     report: GateReport | None = None
     repair_rounds = 0
     error: str | None = None
+    spec: AppSpec | None = None
     try:
+        spec_path = source_project.parent / "spec.json"
+        if spec_path.is_file():
+            spec = AppSpec.model_validate_json(spec_path.read_text(encoding="utf-8"))
         session.emit("stage", name="file_ops", status="start")
         t0 = time.perf_counter()
-        current = _read_feature_files(project)
-        improve_user = (
-            f"The app already exists. Apply this change only:\n{instruction}\n\n"
-            "Keep kit widgets, in-memory state, and the FeatureRoute class. "
-            "Keep KitShopScreen / KitDetailScreen / KitProfileScreen. Do not add AppBar. Pick the closest KitPhoto key. "
-            "No text-only lists, no Colors.*. Put money in price:. "
-            + (
-                f"The color palette was just switched to {new_palette.name}; do not change colors. "
-                if new_palette is not None
-                else ""
+        if mode in ("harness", "scaffold_only"):
+            if spec is None:
+                raise ValueError("missing spec.json on source run — build an app first")
+            prev = source_project.parent / "catalog.json"
+            extra = f"Apply this change only:\n{instruction}"
+            if prev.is_file():
+                extra += f"\n\nPrevious catalog JSON:\n{prev.read_text(encoding='utf-8')}"
+            if new_palette is not None:
+                extra += f"\n\nThe color palette was switched to {new_palette.name}; keep layout, adjust copy if needed."
+            _write_catalog_from_model(
+                session,
+                system,
+                _catalog_user(spec, instruction, extra=extra),
+                project,
+                run_dir,
             )
-            +
-            "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core. "
-            "Writes use content; find and replace must be JSON null.\n\n"
-            f"Current feature files:\n{current}"
-        )
-        ops_log = request_and_apply_ops(session, system, improve_user, project, allowed_prefixes=allowed)
-        stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
-        session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=ops_log.get("applied"))
-        if mode == "harness":
-            _polish(session, system, improve_user, project, allowed_prefixes=allowed)
+            stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=4)
+            ops_log = {"applied": 4, "catalog": True}
+        else:
+            current = _read_feature_files(project)
+            improve_user = (
+                f"The app already exists. Apply this change only:\n{instruction}\n\n"
+                "Terse Dart under lib/. Writes use content; find and replace must be JSON null.\n\n"
+                f"Current feature files:\n{current}"
+            )
+            ops_log = request_and_apply_ops(session, system, improve_user, project, allowed_prefixes=allowed)
+            stages["build_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+            session.emit("stage", name="file_ops", status="ok", ms=stages["build_ms"], applied=ops_log.get("applied"))
 
         session.emit("stage", name="gate", status="start")
         t0 = time.perf_counter()
@@ -541,18 +617,32 @@ def run_improve(
             repair_rounds += 1
             session.emit("repair", round=repair_rounds)
             fail_text = _failing_text(report)
-            files = _read_feature_files(project)
-            request_and_apply_ops(
-                session,
-                system,
-                improve_user,
-                project,
-                allowed_prefixes=allowed,
-                extra_feedback=(
-                    f"Gate failed (round {repair_rounds}). Fix ONLY these errors:\n{fail_text}\n\n"
-                    f"Relevant files:\n{files}"
-                ),
-            )
+            if mode in ("harness", "scaffold_only") and spec is not None:
+                _write_catalog_from_model(
+                    session,
+                    system,
+                    _catalog_user(
+                        spec,
+                        instruction,
+                        extra=f"Gate failed (round {repair_rounds}). Fix the catalog:\n{fail_text}",
+                    ),
+                    project,
+                    run_dir,
+                )
+            else:
+                files = _read_feature_files(project)
+                improve_user = f"Fix gate errors for:\n{instruction}"
+                request_and_apply_ops(
+                    session,
+                    system,
+                    improve_user,
+                    project,
+                    allowed_prefixes=allowed,
+                    extra_feedback=(
+                        f"Gate failed (round {repair_rounds}). Fix ONLY these errors:\n{fail_text}\n\n"
+                        f"Relevant files:\n{files}"
+                    ),
+                )
             report = gate(project)
             _emit_gate(session, report)
         stages["gate_ms"] = round((time.perf_counter() - t0) * 1000, 1)
