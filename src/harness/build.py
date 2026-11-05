@@ -24,7 +24,7 @@ from preflight.types import CheckStatus
 from .branding import apply_branding
 from .prompts import BARE_REQUIREMENTS, CAPSULE_PREFIX
 from .skin import write_skin_from_project
-from .kitlint import kit_violations
+from .kitlint import kit_violations, rewrite_raw_material
 from .palettes import apply_palette, current_palette, palette_from_instruction, pick_palette
 from .tokens import apply_tokens
 from pilot.schemas import Direction
@@ -223,7 +223,8 @@ def _polish(
     *,
     allowed_prefixes: list[str] | None,
 ) -> list[str]:
-    """One rewrite pass when screens bypass the kit. Never fails the build."""
+    """Deterministic chrome rewrite, then one model pass if screens still bypass the kit."""
+    rewrite_raw_material(project)
     problems = kit_violations(project)
     if not problems:
         return []
@@ -378,12 +379,12 @@ def run_build(
         build_user = (
             f"AppSpec:\n{spec.model_dump_json()}\n\n"
             "Emit 4 write operations only: "
-            "lib/app/features/app/store.dart (8–12 emoji items, in-memory), "
-            "lib/app/features/app/browse_screen.dart, "
-            "lib/app/features/app/detail_screen.dart (detail or create), "
-            "lib/app/features/registry.dart (keep FeatureRoute; include a short ProfileScreen in this file; "
+            "lib/app/features/app/store.dart (8–12 KitProduct items, in-memory, photo keys + prices), "
+            "lib/app/features/app/browse_screen.dart (RocketScaffold(body: KitShopScreen(...)) only), "
+            "lib/app/features/app/detail_screen.dart (RocketScaffold(body: KitDetailScreen(...)) only), "
+            "lib/app/features/registry.dart (keep FeatureRoute; ProfileScreen = KitProfileScreen; "
             "register browse FIRST as home, then detail, then profile; tab: true with emoji icons). "
-            "StatefulWidget + setState on browse and detail. ONLY kit widgets for layout. "
+            "Do not place HeroHeader/ProductGrid yourself. context.go, no Navigator.push, no title: on RocketScaffold. "
             "Browse screen under 90 lines, other files under 60. Terse Dart, no comments. content set; find/replace JSON null. "
             "Do not recreate auth, paywall, settings, terms, or privacy. Do not edit lib/core."
         )
@@ -513,7 +514,7 @@ def run_improve(
         improve_user = (
             f"The app already exists. Apply this change only:\n{instruction}\n\n"
             "Keep kit widgets, in-memory state, and the FeatureRoute class. "
-            "Screens open with HeroHeader and mix FeaturedRow, SectionHeader, ProductGrid, ListSection, StatRow as fits; pick the closest KitPhoto key. "
+            "Keep KitShopScreen / KitDetailScreen / KitProfileScreen. Do not add AppBar. Pick the closest KitPhoto key. "
             "No text-only lists, no Colors.*. Put money in price:. "
             + (
                 f"The color palette was just switched to {new_palette.name}; do not change colors. "

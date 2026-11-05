@@ -32,7 +32,12 @@ void main() {
         const SizedBox(
           width: 180,
           height: 280,
-          child: ProductCard(photo: 'shoe', title: 'Ultraboost', subtitle: 'Running', price: '\$190'),
+          child: ProductCard(
+            photo: 'shoe',
+            title: 'Ultraboost',
+            subtitle: 'Running',
+            price: '\$190',
+          ),
         ),
       ),
     );
@@ -43,7 +48,11 @@ void main() {
   testWidgets('ChipRow has no checkmark', (tester) async {
     await tester.pumpWidget(
       _wrap(
-        ChipRow(labels: const ['All', 'Gym'], selected: 'All', onSelected: (_) {}),
+        ChipRow(
+          labels: const ['All', 'Gym'],
+          selected: 'All',
+          onSelected: (_) {},
+        ),
       ),
     );
     expect(find.text('All'), findsOneWidget);
@@ -52,7 +61,9 @@ void main() {
 
   testWidgets('HeroHeader uses title and emoji', (tester) async {
     await tester.pumpWidget(
-      _wrap(const HeroHeader(title: 'Library', subtitle: 'Borrow', emoji: '🧰')),
+      _wrap(
+        const HeroHeader(title: 'Library', subtitle: 'Borrow', emoji: '🧰'),
+      ),
     );
     expect(find.text('Library'), findsOneWidget);
     expect(find.text('Borrow'), findsOneWidget);
@@ -128,10 +139,12 @@ void main() {
           children: [
             const SectionHeader('Today', actionLabel: 'See all'),
             const ProgressRing(value: 0.6, caption: 'of goal'),
-            const StatRow(children: [
-              StatTile(label: 'Streak', value: '12'),
-              StatTile(label: 'Best', value: '21'),
-            ]),
+            const StatRow(
+              children: [
+                StatTile(label: 'Streak', value: '12'),
+                StatTile(label: 'Best', value: '21'),
+              ],
+            ),
           ],
         ),
       ),
@@ -145,9 +158,17 @@ void main() {
   testWidgets('FeaturedRow shows FeaturedCard copy and badge', (tester) async {
     await tester.pumpWidget(
       _wrap(
-        const FeaturedRow(children: [
-          FeaturedCard(photo: 'jacket', title: 'Track jacket', subtitle: 'Light', badge: 'New', price: '\$70'),
-        ]),
+        const FeaturedRow(
+          children: [
+            FeaturedCard(
+              photo: 'jacket',
+              title: 'Track jacket',
+              subtitle: 'Light',
+              badge: 'New',
+              price: '\$70',
+            ),
+          ],
+        ),
       ),
     );
     expect(find.text('Track jacket'), findsOneWidget);
@@ -155,14 +176,20 @@ void main() {
     expect(find.text('\$70'), findsOneWidget);
   });
 
-  testWidgets('ProductCard favorite toggles icon and calls back', (tester) async {
+  testWidgets('ProductCard favorite toggles icon and calls back', (
+    tester,
+  ) async {
     var taps = 0;
     await tester.pumpWidget(
       _wrap(
         SizedBox(
           width: 180,
           height: 260,
-          child: ProductCard(title: 'Cap', favorite: false, onFavorite: () => taps++),
+          child: ProductCard(
+            title: 'Cap',
+            favorite: false,
+            onFavorite: () => taps++,
+          ),
         ),
       ),
     );
@@ -176,6 +203,63 @@ void main() {
     }
     expect(KitPhoto.resolve(title: 'Cold brew latte'), KitPhoto.coffee);
     expect(KitPhoto.resolve(title: 'City bicycle'), KitPhoto.path('bike'));
+  });
+
+  testWidgets('KitShopScreen lays out hero, featured, grid from products', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        SizedBox(
+          width: 400,
+          height: 800,
+          child: KitShopScreen(
+            heroTitle: 'Drops',
+            heroPhoto: 'shoe',
+            items: const [
+              KitProduct(
+                id: '1',
+                title: 'Ultraboost',
+                subtitle: 'Run',
+                price: '\$190',
+                photo: 'shoe',
+              ),
+              KitProduct(
+                id: '2',
+                title: 'Cleats',
+                price: '\$120',
+                photo: 'cleat',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Drops'), findsOneWidget);
+    expect(find.text('Ultraboost'), findsWidgets);
+    expect(find.byType(HeroHeader), findsOneWidget);
+    expect(find.byType(FeaturedRow), findsOneWidget);
+    expect(find.byType(ProductGrid), findsOneWidget);
+  });
+
+  testWidgets('KitAuthScreen shows fields without an AppBar', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        KitAuthScreen(
+          title: 'Create your account',
+          subtitle: 'Email and password',
+          email: TextEditingController(),
+          password: TextEditingController(),
+          primaryLabel: 'Create account',
+          onPrimary: () {},
+          switchLabel: 'Sign in',
+          onSwitch: () {},
+        ),
+      ),
+    );
+    expect(find.text('Create your account'), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
   });
 
   test('token defaults match the documented scale', () {

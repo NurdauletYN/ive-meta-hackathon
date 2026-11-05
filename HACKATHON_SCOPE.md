@@ -70,6 +70,7 @@ Playwright screenshots were **skipped** (optional; install not pursued inside th
 | studio chat | done | 2026-11-04 | NEW | Single text field; first send builds, later sends call `/api/improve` on the same app |
 | design engine | done | 2026-11-04 | NEW | 11 curated palettes (WCAG AA, dark and light), kit v2 widgets, 24 Muse Image photos (`scripts/gen_kit_photos.py`), kit lint + one polish pass |
 | projects and versions | done | 2026-11-04 | NEW | `meta.json` per run, project sidebar, version chips (restore = fork), code download zip without secrets |
+| screen blocks | done | 2026-11-05 | NEW | KitShop/Detail/Profile/Auth screens; no Material AppBar; phone bezel padding; deterministic kit rewrite |
 | live quality check | done | 2026-11-04 | NEW | 3 Muse Spark builds, $1.50 cap; see docs/quality_check.md |
 
 **Removed after Day 1:** `src/sketch2layout/`, SAM adapter, `meta-sam-parser`, wireframe samples, SAM smoke script.

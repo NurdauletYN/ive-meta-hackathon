@@ -431,6 +431,9 @@ KIT_WIDGETS = (
     "KitBadge",
     "PriceTag",
     "CartBar",
+    "KitShopScreen",
+    "KitDetailScreen",
+    "KitProfileScreen",
     "FeaturedRow",
     "FeaturedCard",
     "SectionHeader",
@@ -510,7 +513,14 @@ def check_not_text_only(project: Path) -> CheckResult:
     if not files:
         return CheckResult(check_id, CheckStatus.PASS, "no generated extra features")
     joined = "\n".join(text for _, text in files)
-    has_card = "ItemCard" in joined or "HeroHeader" in joined or "ProductCard" in joined
+    has_card = (
+        "ItemCard" in joined
+        or "HeroHeader" in joined
+        or "ProductCard" in joined
+        or "KitShopScreen" in joined
+        or "KitDetailScreen" in joined
+        or "FeaturedCard" in joined
+    )
     has_icon = _EMOJI.search(joined) is not None
     if has_card and has_icon:
         path, text = files[0]

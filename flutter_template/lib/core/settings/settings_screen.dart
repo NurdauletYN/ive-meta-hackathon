@@ -15,10 +15,14 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RocketScaffold(
-      title: AppStrings.settingsTitle,
       showBottomNav: false,
       body: KitPage(
         children: [
+          const HeroHeader(
+            title: AppStrings.settingsTitle,
+            subtitle: 'Account, legal, and restore.',
+            photo: KitPhoto.bag,
+          ),
           if (auth.isDemo || billing.isDemo)
             ListSection(
               children: [
@@ -26,8 +30,10 @@ class SettingsScreen extends StatelessWidget {
                   title: 'Demo mode',
                   emoji: '🧪',
                   subtitle: [
-                    if (auth.isDemo) 'Firebase config not supplied; in-memory auth.',
-                    if (billing.isDemo) 'RevenueCat key not supplied; mock billing.',
+                    if (auth.isDemo)
+                      'Firebase config not supplied; in-memory auth.',
+                    if (billing.isDemo)
+                      'RevenueCat key not supplied; mock billing.',
                   ].join(' '),
                 ),
               ],

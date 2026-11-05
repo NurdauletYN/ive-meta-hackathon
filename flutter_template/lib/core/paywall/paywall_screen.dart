@@ -33,9 +33,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
   Widget build(BuildContext context) {
     final tokens = KitTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: AppBar(backgroundColor: scheme.surface, elevation: 0),
+    return RocketScaffold(
+      showBottomNav: false,
       body: FutureBuilder<List<OfferingProduct>>(
         future: _offerings,
         builder: (context, snapshot) {
@@ -55,7 +54,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
                     title: AppStrings.paywallTitle,
                     subtitle:
                         'Unlock the full app. Cancel any time in your App Store settings.',
-                    emoji: '✨',
+                    photo: KitPhoto.path('watch'),
+                    actionLabel: 'Plus',
                   ),
                 ),
                 SizedBox(height: tokens.spacing.md),

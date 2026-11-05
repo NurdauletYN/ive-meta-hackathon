@@ -83,6 +83,20 @@ def test_kit_violations_flags_raw_material(tmp_path: Path) -> None:
     assert kit_violations(tmp_path) == []
 
 
+def test_rewrite_raw_material_swaps_scaffold(tmp_path: Path) -> None:
+    from harness.kitlint import rewrite_raw_material
+
+    feature = tmp_path / "lib" / "app" / "features"
+    feature.mkdir(parents=True)
+    path = feature / "a.dart"
+    path.write_text("Scaffold(appBar: AppBar(title: Text('x')), body: ListTile(title: Text('x')))\n", encoding="utf-8")
+    assert rewrite_raw_material(tmp_path) == 1
+    text = path.read_text(encoding="utf-8")
+    assert "RocketScaffold(" in text
+    assert "AppBar(" not in text
+    assert "ListRow(" in text
+
+
 def _fake_run(runs: Path, run_id: str) -> None:
     project = runs / run_id / "project"
     (project / "lib" / "app").mkdir(parents=True)

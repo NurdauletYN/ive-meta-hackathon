@@ -26,7 +26,9 @@ class RocketScaffold extends StatelessWidget {
     final tokens = KitTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
     final tabs = KitNavigation.tabs;
-    final location = GoRouterState.of(context).uri.path;
+    final location = GoRouter.maybeOf(context) == null
+        ? ''
+        : GoRouterState.of(context).uri.path;
     var current = 0;
     for (var i = 0; i < tabs.length; i++) {
       final path = tabs[i].path;
@@ -36,47 +38,146 @@ class RocketScaffold extends StatelessWidget {
       }
     }
     final showBar = title != null || (actions != null && actions!.isNotEmpty);
-    return Scaffold(
-      backgroundColor: scheme.surface,
-      appBar: showBar
-          ? AppBar(
-              title: title == null
-                  ? null
-                  : Text(
-                      title!,
-                      style: TextStyle(
-                        fontSize: tokens.typeScale.title,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.4,
-                        color: scheme.onSurface,
-                      ),
-                    ),
-              actions: actions,
-              backgroundColor: scheme.surface,
-              foregroundColor: scheme.onSurface,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              centerTitle: false,
-            )
-          : null,
-      body: body,
-      floatingActionButton: floatingActionButton,
-      bottomNavigationBar: showBottomNav && tabs.length >= 2
-          ? NavigationBar(
-              selectedIndex: current,
-              height: 68,
-              onDestinationSelected: (index) {
-                context.go(tabs[index].path);
-              },
-              destinations: [
-                for (final tab in tabs)
-                  NavigationDestination(
-                    icon: Text(tab.icon, style: TextStyle(fontSize: tokens.typeScale.title)),
-                    label: tab.label,
+    final showTabs = showBottomNav && tabs.length >= 2;
+    final padded = Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing.sm,
+        showBar ? 0 : tokens.spacing.sm,
+        tokens.spacing.sm,
+        showTabs ? tokens.spacing.sm : tokens.spacing.md,
+      ),
+      child: showBar
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    tokens.spacing.sm,
+                    tokens.spacing.xs,
+                    tokens.spacing.sm,
+                    tokens.spacing.sm,
                   ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: title == null
+                            ? const SizedBox.shrink()
+                            : Text(
+                                title!,
+                                style: TextStyle(
+                                  fontSize: tokens.typeScale.title + 4,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.7,
+                                  color: scheme.onSurface,
+                                ),
+                              ),
+                      ),
+                      ...?actions,
+                    ],
+                  ),
+                ),
+                Expanded(child: body),
               ],
             )
+          : body,
+    );
+    return Scaffold(
+      backgroundColor: scheme.surface,
+      extendBody: showTabs,
+      body: SafeArea(bottom: !showTabs, child: padded),
+      floatingActionButton: floatingActionButton,
+      bottomNavigationBar: showTabs
+          ? Padding(
+              padding: EdgeInsets.fromLTRB(
+                tokens.spacing.md,
+                0,
+                tokens.spacing.md,
+                tokens.spacing.sm,
+              ),
+              child: Material(
+                color: scheme.surfaceContainerHighest,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(tokens.radii.pill),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < tabs.length; i++)
+                        Expanded(
+                          child: _TabButton(
+                            tab: tabs[i],
+                            selected: i == current,
+                            onTap: () => context.go(tabs[i].path),
+                            tokens: tokens,
+                            scheme: scheme,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            )
           : null,
+    );
+  }
+}
+
+class _TabButton extends StatelessWidget {
+  const _TabButton({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+    required this.tokens,
+    required this.scheme,
+  });
+
+  final KitTab tab;
+  final bool selected;
+  final VoidCallback onTap;
+  final KitTokens tokens;
+  final ColorScheme scheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(vertical: tokens.spacing.sm + 2),
+        decoration: BoxDecoration(
+          color: selected ? scheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(tokens.radii.pill),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              tab.icon,
+              style: TextStyle(
+                fontSize: 16,
+                height: 1,
+                color: selected ? scheme.onPrimary : scheme.onSurface,
+              ),
+            ),
+            SizedBox(height: tokens.spacing.xs),
+            Text(
+              tab.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: tokens.typeScale.label,
+                fontWeight: FontWeight.w700,
+                color: selected
+                    ? scheme.onPrimary
+                    : scheme.onSurface.withValues(alpha: 0.62),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -90,12 +191,18 @@ class KitPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = KitTokens.of(context);
     return ListView.separated(
-      padding: EdgeInsets.fromLTRB(tokens.spacing.md, tokens.spacing.sm, tokens.spacing.md, tokens.spacing.xl),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing.md + 4,
+        tokens.spacing.md,
+        tokens.spacing.md + 4,
+        tokens.spacing.xl + 12,
+      ),
       itemCount: children.length,
       separatorBuilder: (context, index) {
         final current = children[index];
         final next = index + 1 < children.length ? children[index + 1] : null;
-        final loose = current is HeroHeader ||
+        final loose =
+            current is HeroHeader ||
             current is ChipRow ||
             current is AppTextField ||
             current is SectionTitle ||
@@ -106,7 +213,8 @@ class KitPage extends StatelessWidget {
             next is HeroHeader;
         return SizedBox(height: loose ? tokens.spacing.md : tokens.spacing.sm);
       },
-      itemBuilder: (context, index) => Reveal(index: index, child: children[index]),
+      itemBuilder: (context, index) =>
+          Reveal(index: index, child: children[index]),
     );
   }
 }
@@ -127,7 +235,10 @@ class Reveal extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (context, t, child) => Opacity(
         opacity: t,
-        child: Transform.translate(offset: Offset(0, (1 - t) * 18), child: child),
+        child: Transform.translate(
+          offset: Offset(0, (1 - t) * 18),
+          child: child,
+        ),
       ),
       child: child,
     );
@@ -159,7 +270,8 @@ class HeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = KitTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final end = Color.lerp(scheme.primary, scheme.tertiary, 0.4) ?? scheme.primary;
+    final end =
+        Color.lerp(scheme.primary, scheme.tertiary, 0.4) ?? scheme.primary;
     final fg = scheme.onPrimary;
     final radius = BorderRadius.circular(tokens.radii.lg + 6);
     final text = Column(
@@ -169,7 +281,10 @@ class HeroHeader extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(bottom: tokens.spacing.sm),
             child: emoji != null
-                ? Text(emoji!, style: TextStyle(fontSize: tokens.typeScale.display))
+                ? Text(
+                    emoji!,
+                    style: TextStyle(fontSize: tokens.typeScale.display),
+                  )
                 : Icon(icon, color: fg, size: tokens.typeScale.display),
           ),
         Text(
@@ -202,7 +317,10 @@ class HeroHeader extends StatelessWidget {
               onTap: onAction,
               customBorder: const StadiumBorder(),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: tokens.spacing.lg, vertical: tokens.spacing.sm + 2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: tokens.spacing.lg,
+                  vertical: tokens.spacing.sm + 2,
+                ),
                 child: Text(
                   actionLabel!,
                   style: TextStyle(
@@ -237,7 +355,10 @@ class HeroHeader extends StatelessWidget {
             Positioned(
               left: -30,
               bottom: -60,
-              child: _Blob(size: 150, color: scheme.tertiary.withValues(alpha: 0.22)),
+              child: _Blob(
+                size: 150,
+                color: scheme.tertiary.withValues(alpha: 0.22),
+              ),
             ),
             Padding(
               padding: EdgeInsets.all(tokens.spacing.lg),
@@ -254,7 +375,9 @@ class HeroHeader extends StatelessWidget {
                             aspectRatio: 1,
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(tokens.radii.lg),
+                                borderRadius: BorderRadius.circular(
+                                  tokens.radii.lg,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.28),
@@ -263,7 +386,11 @@ class HeroHeader extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              child: KitPhotoTile(title: title, photo: photo, size: null),
+                              child: KitPhotoTile(
+                                title: title,
+                                photo: photo,
+                                size: null,
+                              ),
                             ),
                           ),
                         ),
@@ -302,7 +429,10 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = KitTokens.of(context);
     return Padding(
-      padding: EdgeInsets.only(top: tokens.spacing.xs, bottom: tokens.spacing.xs),
+      padding: EdgeInsets.only(
+        top: tokens.spacing.xs,
+        bottom: tokens.spacing.xs,
+      ),
       child: Text(
         text,
         style: TextStyle(
@@ -354,7 +484,13 @@ class ItemCard extends StatelessWidget {
           padding: EdgeInsets.all(tokens.spacing.sm + 2),
           child: Row(
             children: [
-              KitPhotoTile(title: title, photo: photo, emoji: emoji, icon: icon, size: 88),
+              KitPhotoTile(
+                title: title,
+                photo: photo,
+                emoji: emoji,
+                icon: icon,
+                size: 88,
+              ),
               SizedBox(width: tokens.spacing.md),
               Expanded(
                 child: Column(
@@ -423,12 +559,18 @@ class KitPhotoTile extends StatelessWidget {
     final side = size ?? 88;
     Widget fallback(_, __, ___) {
       final raw = emoji ?? '';
-      final letter = raw.isEmpty || (raw.characters.first.length == 1 && raw.codeUnitAt(0) < 128);
+      final letter =
+          raw.isEmpty ||
+          (raw.characters.first.length == 1 && raw.codeUnitAt(0) < 128);
       return ColoredBox(
         color: scheme.primary.withValues(alpha: 0.12),
         child: Center(
           child: letter
-              ? Icon(icon ?? Icons.image_outlined, color: scheme.primary, size: side * 0.36)
+              ? Icon(
+                  icon ?? Icons.image_outlined,
+                  color: scheme.primary,
+                  size: side * 0.36,
+                )
               : Text(raw, style: TextStyle(fontSize: side * 0.36, height: 1)),
         ),
       );
@@ -488,9 +630,18 @@ class ProductCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    KitPhotoTile(title: title, photo: photo, emoji: emoji, size: null),
+                    KitPhotoTile(
+                      title: title,
+                      photo: photo,
+                      emoji: emoji,
+                      size: null,
+                    ),
                     if (badge != null)
-                      Positioned(left: 8, top: 8, child: KitBadge(label: badge!, solid: true)),
+                      Positioned(
+                        left: 8,
+                        top: 8,
+                        child: KitBadge(label: badge!, solid: true),
+                      ),
                     if (favorite != null || onFavorite != null)
                       Positioned(
                         right: 6,
@@ -505,9 +656,13 @@ class ProductCard extends StatelessWidget {
                               width: 32,
                               height: 32,
                               child: Icon(
-                                favorite == true ? Icons.favorite : Icons.favorite_border,
+                                favorite == true
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
                                 size: 18,
-                                color: favorite == true ? scheme.tertiary : scheme.onSurface,
+                                color: favorite == true
+                                    ? scheme.tertiary
+                                    : scheme.onSurface,
                               ),
                             ),
                           ),
@@ -518,7 +673,12 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(tokens.spacing.sm + 2, tokens.spacing.xs, tokens.spacing.sm + 2, tokens.spacing.md),
+              padding: EdgeInsets.fromLTRB(
+                tokens.spacing.sm + 2,
+                tokens.spacing.xs,
+                tokens.spacing.sm + 2,
+                tokens.spacing.md,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -538,7 +698,10 @@ class ProductCard extends StatelessWidget {
                       subtitle!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: tokens.typeScale.caption, color: scheme.onSurface.withValues(alpha: 0.55)),
+                      style: TextStyle(
+                        fontSize: tokens.typeScale.caption,
+                        color: scheme.onSurface.withValues(alpha: 0.55),
+                      ),
                     ),
                   if (price != null) ...[
                     SizedBox(height: tokens.spacing.xs),
@@ -634,13 +797,18 @@ class _FilterPill extends StatelessWidget {
         onTap: onTap,
         customBorder: const StadiumBorder(),
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: tokens.spacing.md, vertical: tokens.spacing.sm),
+          padding: EdgeInsets.symmetric(
+            horizontal: tokens.spacing.md,
+            vertical: tokens.spacing.sm,
+          ),
           child: Text(
             label,
             style: TextStyle(
               fontSize: tokens.typeScale.label,
               fontWeight: FontWeight.w600,
-              color: selected ? scheme.onPrimary : scheme.onSurface.withValues(alpha: 0.78),
+              color: selected
+                  ? scheme.onPrimary
+                  : scheme.onSurface.withValues(alpha: 0.78),
             ),
           ),
         ),
@@ -660,7 +828,10 @@ class KitBadge extends StatelessWidget {
     final tokens = KitTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: tokens.spacing.sm + 2, vertical: tokens.spacing.xs),
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.spacing.sm + 2,
+        vertical: tokens.spacing.xs,
+      ),
       decoration: BoxDecoration(
         color: solid ? scheme.primary : scheme.primary.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(tokens.radii.pill),
@@ -699,7 +870,12 @@ class PriceTag extends StatelessWidget {
 }
 
 class StatTile extends StatelessWidget {
-  const StatTile({super.key, required this.label, required this.value, this.emoji});
+  const StatTile({
+    super.key,
+    required this.label,
+    required this.value,
+    this.emoji,
+  });
 
   final String label;
   final String value;
@@ -719,7 +895,8 @@ class StatTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (emoji != null) Text(emoji!, style: TextStyle(fontSize: tokens.typeScale.title)),
+          if (emoji != null)
+            Text(emoji!, style: TextStyle(fontSize: tokens.typeScale.title)),
           SizedBox(height: tokens.spacing.xs),
           Text(
             value,
@@ -732,7 +909,10 @@ class StatTile extends StatelessWidget {
           ),
           Text(
             label,
-            style: TextStyle(fontSize: tokens.typeScale.caption, color: scheme.onSurface.withValues(alpha: 0.58)),
+            style: TextStyle(
+              fontSize: tokens.typeScale.caption,
+              color: scheme.onSurface.withValues(alpha: 0.58),
+            ),
           ),
         ],
       ),
@@ -757,19 +937,30 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (emoji != null) Text(emoji!, style: TextStyle(fontSize: tokens.typeScale.display * 1.4)),
+            if (emoji != null)
+              Text(
+                emoji!,
+                style: TextStyle(fontSize: tokens.typeScale.display * 1.4),
+              ),
             SizedBox(height: tokens.spacing.md),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: tokens.typeScale.title, fontWeight: FontWeight.w600, color: scheme.onSurface),
+              style: TextStyle(
+                fontSize: tokens.typeScale.title,
+                fontWeight: FontWeight.w600,
+                color: scheme.onSurface,
+              ),
             ),
             if (body != null) ...[
               SizedBox(height: tokens.spacing.sm),
               Text(
                 body!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: tokens.typeScale.body, color: scheme.onSurface.withValues(alpha: 0.62)),
+                style: TextStyle(
+                  fontSize: tokens.typeScale.body,
+                  color: scheme.onSurface.withValues(alpha: 0.62),
+                ),
               ),
             ],
           ],
@@ -796,7 +987,14 @@ class PrimaryButton extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: tokens.spacing.md),
           shape: const StadiumBorder(),
         ),
-        child: Text(label, style: TextStyle(fontSize: tokens.typeScale.body, fontWeight: FontWeight.w700, letterSpacing: -0.1)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: tokens.typeScale.body,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.1,
+          ),
+        ),
       ),
     );
   }
@@ -818,9 +1016,19 @@ class SecondaryButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           padding: EdgeInsets.symmetric(vertical: tokens.spacing.md),
           shape: const StadiumBorder(),
-          side: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.18)),
+          side: BorderSide(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.18),
+          ),
         ),
-        child: Text(label, style: TextStyle(fontSize: tokens.typeScale.body, fontWeight: FontWeight.w600)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: tokens.typeScale.body,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -848,7 +1056,9 @@ class AppTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = KitTokens.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(isSearch ? tokens.radii.pill : tokens.radii.md);
+    final radius = BorderRadius.circular(
+      isSearch ? tokens.radii.pill : tokens.radii.md,
+    );
     return TextField(
       controller: controller,
       obscureText: obscureText,
@@ -857,12 +1067,26 @@ class AppTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: isSearch ? null : label,
         hintText: hint ?? (isSearch ? 'Search' : null),
-        prefixIcon: isSearch ? Icon(Icons.search, color: scheme.onSurface.withValues(alpha: 0.45)) : null,
+        prefixIcon: isSearch
+            ? Icon(
+                Icons.search,
+                color: scheme.onSurface.withValues(alpha: 0.45),
+              )
+            : null,
         filled: true,
         fillColor: scheme.surfaceContainerHighest,
-        contentPadding: EdgeInsets.symmetric(horizontal: tokens.spacing.md, vertical: tokens.spacing.md),
-        border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: tokens.spacing.md,
+          vertical: tokens.spacing.md,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide.none,
+        ),
         focusedBorder: OutlineInputBorder(
           borderRadius: radius,
           borderSide: BorderSide(color: scheme.primary.withValues(alpha: 0.45)),
@@ -902,7 +1126,13 @@ class QuantityStepper extends StatelessWidget {
         ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: tokens.spacing.sm),
-          child: Text('$value', style: TextStyle(fontSize: tokens.typeScale.title, fontWeight: FontWeight.w600)),
+          child: Text(
+            '$value',
+            style: TextStyle(
+              fontSize: tokens.typeScale.title,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
         _StepButton(
           icon: Icons.add,
@@ -942,7 +1172,13 @@ class _StepButton extends StatelessWidget {
         child: SizedBox(
           width: 32,
           height: 32,
-          child: Icon(icon, size: 16, color: enabled ? scheme.primary : scheme.onSurface.withValues(alpha: 0.28)),
+          child: Icon(
+            icon,
+            size: 16,
+            color: enabled
+                ? scheme.primary
+                : scheme.onSurface.withValues(alpha: 0.28),
+          ),
         ),
       ),
     );
@@ -967,7 +1203,10 @@ class CartBar extends StatelessWidget {
           for (var i = 0; i < labels.length; i++) ...[
             if (i > 0) SizedBox(width: tokens.spacing.sm),
             InputChip(
-              label: Text(labels[i], style: TextStyle(fontSize: tokens.typeScale.label)),
+              label: Text(
+                labels[i],
+                style: TextStyle(fontSize: tokens.typeScale.label),
+              ),
               onDeleted: onRemove == null ? null : () => onRemove!(labels[i]),
               backgroundColor: scheme.surfaceContainerHighest,
               side: BorderSide.none,
@@ -990,7 +1229,9 @@ Future<T?> showKitFormSheet<T>(
     context: context,
     isScrollControlled: true,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.radii.lg)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(tokens.radii.lg),
+      ),
     ),
     builder: (sheetContext) {
       return Padding(
@@ -1003,10 +1244,7 @@ Future<T?> showKitFormSheet<T>(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            SectionTitle(title),
-            child,
-          ],
+          children: [SectionTitle(title), child],
         ),
       );
     },

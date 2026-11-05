@@ -108,48 +108,29 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final store = CatalogStore.instance;
     final labels = ['All', 'Hand', 'Yard', 'Power', 'Measure'];
     final shown = [for (final item in store.items) if (filter == 'All' || item.category == filter) item];
+    KitProduct product(ToolItem item) => KitProduct(
+          id: item.title,
+          title: item.title,
+          subtitle: item.subtitle,
+          photo: 'tool',
+          category: item.category,
+          badge: item.category,
+        );
     return RocketScaffold(
-      title: 'Browse',
-      body: KitPage(
-        children: [
-          const HeroHeader(
-            title: 'Block library',
-            subtitle: 'Borrow a tool, return it this week.',
-            photo: 'tool',
-            actionLabel: 'Browse all',
-          ),
-          if (shown.length >= 2)
-            FeaturedRow(children: [
-              for (final item in shown.take(3))
-                FeaturedCard(
-                  photo: 'tool',
-                  title: item.title,
-                  subtitle: item.subtitle,
-                  badge: item.category,
-                  onTap: () {
-                    store.selected = item;
-                    context.go('/item');
-                  },
-                ),
-            ]),
-          ChipRow(labels: labels, selected: filter, onSelected: (value) => setState(() => filter = value)),
-          SectionHeader('${shown.length} tools'),
-          ProductGrid(children: [
-            for (final item in shown)
-              ProductCard(
-                photo: 'tool',
-                title: item.title,
-                subtitle: item.subtitle,
-                badge: item.category,
-                favorite: false,
-                onFavorite: () {},
-                onTap: () {
-                  store.selected = item;
-                  context.go('/item');
-                },
-              ),
-          ]),
-        ],
+      body: KitShopScreen(
+        heroTitle: 'Block library',
+        heroSubtitle: 'Borrow a tool, return it this week.',
+        heroPhoto: 'tool',
+        heroAction: 'Browse all',
+        filters: labels,
+        selectedFilter: filter,
+        onFilter: (value) => setState(() => filter = value),
+        items: [for (final item in shown) product(item)],
+        sectionTitle: 'Tools',
+        onTap: (product) {
+          store.selected = store.items.firstWhere((item) => item.title == product.id);
+          context.go('/item');
+        },
       ),
     );
   }
@@ -229,18 +210,19 @@ class _ItemScreenState extends State<ItemScreen> {
   Widget build(BuildContext context) {
     final item = CatalogStore.instance.selected;
     if (item == null) {
-      return const RocketScaffold(title: 'Tool', body: EmptyState(title: 'Pick a tool', body: 'Open browse and choose one.', emoji: '🔎'));
+      return const RocketScaffold(body: EmptyState(title: 'Pick a tool', body: 'Open browse and choose one.', emoji: '🔎'));
     }
     return RocketScaffold(
-      title: item.title,
-      body: KitPage(
-        children: [
-          HeroHeader(title: item.title, subtitle: item.subtitle, emoji: item.emoji),
-          SectionTitle('Borrow'),
-          QuantityStepper(value: days, onChanged: (value) => setState(() => days = value), min: 1, max: 14),
-          PriceTag(text: 'Free for $days day${days == 1 ? '' : 's'}'),
-          PrimaryButton(label: item.listed ? 'Request borrow' : 'Returned', onPressed: () => setState(() => item.listed = !item.listed)),
-          SecondaryButton(label: 'Back to browse', onPressed: () => context.go('/browse')),
+      body: KitDetailScreen(
+        item: KitProduct(id: item.title, title: item.title, subtitle: item.subtitle, photo: 'tool', category: item.category),
+        quantity: days,
+        onQuantity: (value) => setState(() => days = value),
+        primaryLabel: item.listed ? 'Request borrow' : 'Returned',
+        onPrimary: () => setState(() => item.listed = !item.listed),
+        secondaryLabel: 'Back to browse',
+        onSecondary: () => context.go('/browse'),
+        notes: [
+          ListRow(title: item.category, subtitle: 'Free for $days day${days == 1 ? '' : 's'}', emoji: item.emoji),
         ],
       ),
     );
@@ -257,21 +239,18 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = CatalogStore.instance;
-    final space = KitTokens.of(context).spacing;
     return RocketScaffold(
-      title: 'You',
-      body: KitPage(
-        children: [
-          const HeroHeader(title: 'Your shelf', subtitle: 'What you share on this block.', emoji: '👤'),
-          Row(children: [
-            Expanded(child: StatTile(label: 'Listed', value: '${store.items.length}', emoji: '📦')),
-            SizedBox(width: space.sm),
-            Expanded(child: StatTile(label: 'Open', value: '${store.items.where((item) => item.listed).length}', emoji: '✅')),
-          ]),
-          SectionTitle('On the shelf'),
-          if (store.items.isEmpty) const EmptyState(title: 'Nothing listed', emoji: '📭'),
+      body: KitProfileScreen(
+        title: 'Your shelf',
+        subtitle: 'What you share on this block.',
+        photo: 'tool',
+        stats: [
+          StatTile(label: 'Listed', value: '${store.items.length}', emoji: '📦'),
+          StatTile(label: 'Open', value: '${store.items.where((item) => item.listed).length}', emoji: '✅'),
+        ],
+        rows: [
           for (final item in store.items.take(6))
-            ItemCard(emoji: item.emoji, title: item.title, subtitle: item.category, trailing: PriceTag(text: 'share')),
+            ListRow(title: item.title, subtitle: item.category, emoji: item.emoji),
         ],
       ),
     );

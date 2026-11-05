@@ -21,6 +21,26 @@ _RULES: tuple[tuple[re.Pattern[str], str], ...] = (
 )
 
 
+def rewrite_raw_material(project: Path) -> int:
+    """Deterministic v0-style autofix: swap stock Material chrome for kit names. Never invent layout."""
+    root = project / "lib" / "app" / "features"
+    if not root.is_dir():
+        return 0
+    changed = 0
+    for path in root.rglob("*.dart"):
+        text = path.read_text(encoding="utf-8")
+        new = re.sub(r"(?<![A-Za-z])Scaffold\s*\(", "RocketScaffold(", text)
+        new = re.sub(r"appBar:\s*AppBar\((?:[^()]|\([^()]*\))*\)\s*,", "", new)
+        new = re.sub(r"\bListTile\s*\(", "ListRow(", new)
+        new = re.sub(r"\bFilterChip\s*\(", "InputChip(", new)
+        new = new.replace("Navigator.push(", "context.go(")
+        new = new.replace("MaterialPageRoute(", "(")
+        if new != text:
+            path.write_text(new, encoding="utf-8")
+            changed += 1
+    return changed
+
+
 def kit_violations(project: Path, *, limit: int = 8) -> list[str]:
     """`path:line message` for each raw-widget use under lib/app/features."""
     root = project / "lib" / "app" / "features"
