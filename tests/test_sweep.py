@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 from harness.gate import GateReport, StepResult
 from harness.sweep import DirtyTreeError, load_ideas, run_id_for, run_sweep
-from pilot.canned import APP_SPEC, BARE_OPS, FILE_OPS
+from pilot.canned import APP_SPEC, BARE_OPS, TOOL_CATALOG
 from pilot.fake import FakePilot
 from pilot.session import PilotSession
 
@@ -49,7 +49,8 @@ def test_sweep_one_idea_harness_and_bare(tmp_path: Path) -> None:
     usage = tmp_path / "usage.jsonl"
     fake = FakePilot(cost_per_call=0.01)
     fake.enqueue("spec", APP_SPEC, APP_SPEC)
-    fake.enqueue("file_ops", FILE_OPS, BARE_OPS)
+    fake.enqueue("catalog", TOOL_CATALOG)
+    fake.enqueue("file_ops", BARE_OPS)
     ideas = [{"id": "tool_library", "title": "Tools", "blurb": "borrow tools"}]
     summary = run_sweep(
         ideas=ideas,

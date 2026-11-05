@@ -304,6 +304,102 @@ class AppSpec(BaseModel):
     data_models: list[DataModel]
 
 
+class CatalogProduct(BaseModel):
+    model_config = _FORBID
+    id: str
+    title: str
+    subtitle: str | None = None
+    price: str | None = None
+    photo: str | None = None
+    category: str | None = None
+    badge: str | None = None
+    emoji: str | None = None
+
+
+class AppCatalog(BaseModel):
+    model_config = _FORBID
+    shop_hero_title: str
+    shop_hero_subtitle: str | None = None
+    shop_hero_photo: str | None = None
+    shop_hero_action: str | None = None
+    search_hint: str | None = None
+    section_title: str = "All"
+    detail_primary_label: str = "Add to bag"
+    detail_secondary_label: str = "Back"
+    profile_title: str
+    profile_subtitle: str | None = None
+    profile_photo: str | None = None
+    browse_label: str = "Shop"
+    browse_icon: str = "🛍️"
+    profile_label: str = "You"
+    profile_icon: str = "👤"
+    detail_path: str = "/item"
+    products: list[CatalogProduct] = Field(min_length=8, max_length=12)
+
+
+CATALOG_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "shop_hero_title": {"type": "string"},
+        "shop_hero_subtitle": {"type": ["string", "null"]},
+        "shop_hero_photo": {"type": ["string", "null"]},
+        "shop_hero_action": {"type": ["string", "null"]},
+        "search_hint": {"type": ["string", "null"]},
+        "section_title": {"type": "string"},
+        "detail_primary_label": {"type": "string"},
+        "detail_secondary_label": {"type": "string"},
+        "profile_title": {"type": "string"},
+        "profile_subtitle": {"type": ["string", "null"]},
+        "profile_photo": {"type": ["string", "null"]},
+        "browse_label": {"type": "string"},
+        "browse_icon": {"type": "string"},
+        "profile_label": {"type": "string"},
+        "profile_icon": {"type": "string"},
+        "detail_path": {"type": "string"},
+        "products": {
+            "type": "array",
+            "minItems": 8,
+            "maxItems": 12,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "title": {"type": "string"},
+                    "subtitle": {"type": ["string", "null"]},
+                    "price": {"type": ["string", "null"]},
+                    "photo": {"type": ["string", "null"]},
+                    "category": {"type": ["string", "null"]},
+                    "badge": {"type": ["string", "null"]},
+                    "emoji": {"type": ["string", "null"]},
+                },
+                "required": ["id", "title", "subtitle", "price", "photo", "category", "badge", "emoji"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": [
+        "shop_hero_title",
+        "shop_hero_subtitle",
+        "shop_hero_photo",
+        "shop_hero_action",
+        "search_hint",
+        "section_title",
+        "detail_primary_label",
+        "detail_secondary_label",
+        "profile_title",
+        "profile_subtitle",
+        "profile_photo",
+        "browse_label",
+        "browse_icon",
+        "profile_label",
+        "profile_icon",
+        "detail_path",
+        "products",
+    ],
+    "additionalProperties": False,
+}
+
+
 def schema_errors(obj: Any, model: type[BaseModel]) -> list[str]:
     try:
         model.model_validate(obj)

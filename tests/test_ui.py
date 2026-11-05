@@ -193,7 +193,7 @@ def test_improve_requires_an_existing_app(tmp_path: Path) -> None:
 def test_improve_applies_to_existing_project(tmp_path: Path) -> None:
     from harness.build import run_build, run_improve
     from harness.gate import GateReport, StepResult
-    from pilot.canned import FILE_OPS, canned_pilot
+    from pilot.canned import TOOL_CATALOG, canned_pilot
     from pilot.fake import FakePilot
     from pilot.session import PilotSession
 
@@ -214,11 +214,11 @@ def test_improve_applies_to_existing_project(tmp_path: Path) -> None:
         build_web=False,
     )
     assert built["ok"] is True
-    store = first / "project" / "lib" / "app" / "features" / "browse" / "catalog_store.dart"
+    store = first / "project" / "lib" / "app" / "features" / "app" / "app_store.dart"
     assert store.is_file()
 
     fake = FakePilot()
-    fake.enqueue("file_ops", FILE_OPS)
+    fake.enqueue("catalog", TOOL_CATALOG)
     session2 = PilotSession(fake, run_id="imp-b", usage_path=usage)
     second = tmp_path / "second"
     result = run_improve(
@@ -231,8 +231,8 @@ def test_improve_applies_to_existing_project(tmp_path: Path) -> None:
     )
     assert result["ok"] is True
     assert result["kind"] == "improve"
-    assert (second / "project" / "lib" / "app" / "features" / "browse" / "catalog_store.dart").is_file()
-    assert "The app already exists" in fake.calls[0][2]
+    assert (second / "project" / "lib" / "app" / "features" / "app" / "app_store.dart").is_file()
+    assert "Apply this change only" in fake.calls[0][2]
 
 
 def test_harness_report_empty_state(tmp_path: Path) -> None:

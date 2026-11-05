@@ -20,6 +20,7 @@ Checks search **all of `lib/`** (and `test/` for smoke). They do not require cap
 | `account_deletion_erases_data` | `deleteAccount()` clears in-memory user data (`.clear()` or `= null`); capsule has a behavioral Flutter test | 5.1.1(v) Account Deletion |
 | `home_not_webview` | **FAIL** if a home-named screen renders `WebView` / `WebViewWidget` as main content | 4.2 Minimum Functionality (web wrapper) |
 | `remote_code` | **WARN** on `eval(`, `javascript:`, `Isolate.spawnUri`, `dart:mirrors`, `WebAssembly.instantiate` | 2.5.2 Software Requirements (remote code) |
+| `no_raw_material` | **FAIL** if generated features use ListTile, Scaffold, AppBar, FilterChip, Colors.*, etc. | 4.0 Design |
 | `kit_usage` | **WARN** if generated extra screens use fewer than 4 distinct kit widget types | 4.0 Design |
 | `not_text_only` | **WARN** if generated extra screens are Text/ListTile lists without cards and emoji or icons | 4.0 Design / 4.2 Minimum Functionality |
 

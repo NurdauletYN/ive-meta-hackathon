@@ -507,6 +507,24 @@ def check_kit_usage(project: Path) -> CheckResult:
     )
 
 
+def check_no_raw_material(project: Path) -> CheckResult:
+    from harness.kitlint import kit_violations
+
+    check_id = "no_raw_material"
+    issues = kit_violations(project, limit=5)
+    if not issues:
+        return CheckResult(check_id, CheckStatus.PASS, "generated screens use kit blocks only")
+    first = issues[0]
+    rel, rest = first.split(" ", 1)
+    line = 1
+    if ":" in rel:
+        path_part, line_part = rel.rsplit(":", 1)
+        rel = path_part
+        if line_part.isdigit():
+            line = int(line_part)
+    return CheckResult(check_id, CheckStatus.FAIL, rest, rel, line)
+
+
 def check_not_text_only(project: Path) -> CheckResult:
     check_id = "not_text_only"
     files = _generated_feature_files(project)
@@ -555,6 +573,7 @@ ALL_CHECKS = (
     check_account_deletion_erases_data,
     check_home_not_webview,
     check_remote_code,
+    check_no_raw_material,
     check_kit_usage,
     check_not_text_only,
 )

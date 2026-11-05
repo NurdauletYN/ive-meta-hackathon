@@ -14,8 +14,9 @@ Capsule API (do not invent other paths):
 - Extra screens MUST be registered in lib/app/features/registry.dart via extraFeatureRoutes(). The core router already reads that list. Keep the FeatureRoute class with `final bool tab` (default false) and `final String icon`. First entry is home at / and /home. Mark up to 4 routes tab: true with an emoji icon for bottom navigation.
 - Auth: AuthService.deleteAccount(). Billing: BillingService.purchase / restorePurchases. Do not reimplement those services.
 - Settings, paywall, terms, privacy, onboarding scaffolds already exist in lib/core. Do not recreate them.
-- File operations JSON: op write|patch|delete, relative path, content/find/replace (null when unused). One patch replaces the first match only.
-- Design is the product. Do not invent page chrome (no AppBar, NavigationBar, ListTile, CircleAvatar, FilterChip, Card, raw Scaffold, Colors.*, Color(0x...), Navigator.push). Fill kit screens with data: shop = KitShopScreen, detail = KitDetailScreen, profile = KitProfileScreen. RocketScaffold wraps them with no title:. Seed 8 to 12 KitProduct items with believable names, prices, and KitPhoto keys. Local photos only. Follow the examples below.
+- File operations JSON: op write|patch|delete, relative path, content/find/replace (null when unused). One patch replaces the first match only. Bare mode only.
+- Harness build/improve: you return AppCatalog JSON (products + hero/profile copy + tab labels). The harness writes KitShopScreen / KitDetailScreen / KitProfileScreen Dart; never emit layout Dart for those screens.
+- Design is the product. Do not invent page chrome (no AppBar, NavigationBar, ListTile, CircleAvatar, FilterChip, Card, raw Scaffold, Colors.*, Color(0x...), Navigator.push). Kit blocks only. Seed 8 to 12 products with believable names, prices, and KitPhoto keys. Local photos only. Follow the examples below.
 
 Rules: no TODO, no lorem ipsum, no default Flutter demo strings. Dart 3 null-safety. Do not edit pubspec.yaml.
 

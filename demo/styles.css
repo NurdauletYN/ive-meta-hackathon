@@ -106,7 +106,9 @@ body::before {
   border-bottom: 0;
   animation: fade-down 0.7s var(--ease) both;
 }
-.top-left { grid-area: brand; display: flex; align-items: center; gap: 0.4rem; min-width: 0; }
+.top-left { grid-area: brand; display: flex; align-items: center; gap: 0.4rem; min-width: 0; flex-wrap: wrap; }
+.studio-build { margin: 0; font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); width: 100%; }
+.studio-build.is-stale { color: #c62828; }
 .ticker { grid-area: ticker; }
 .cost { grid-area: cost; justify-self: end; width: max-content; }
 @media (max-width: 800px) {

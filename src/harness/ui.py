@@ -24,6 +24,7 @@ from .design import pick_direction, run_design
 from .events import EventHub, EventLog
 from .gate import gate_json, run_gate
 from .projects import build_zip, get_project, list_projects, write_meta
+from .studio_version import studio_info
 
 _RUN_ID = re.compile(r"^[a-zA-Z0-9._-]{1,64}$")
 MAX_JOBS = 2
@@ -395,6 +396,9 @@ def make_handler(app: HarnessUI):
             if path == "/api/runs":
                 self._json(200, app.list_runs())
                 return
+            if path == "/api/studio":
+                self._json(200, studio_info(app.root))
+                return
             if path == "/api/projects":
                 self._json(200, list_projects(app.runs))
                 return
@@ -503,7 +507,12 @@ def _content_type(path: Path) -> str:
 
 def serve_ui(root: Path, port: int = 8765) -> None:
     app = HarnessUI(root)
+    info = studio_info(root)
     handler = make_handler(app)
     httpd = ThreadingHTTPServer(("127.0.0.1", port), handler)
-    print(f"Rocket studio at http://127.0.0.1:{port}/  (127.0.0.1 only)", flush=True)
+    print(
+        f"Rocket studio at http://127.0.0.1:{port}/  (127.0.0.1 only)  "
+        f"build {info['version']} · {info['fingerprint']}",
+        flush=True,
+    )
     httpd.serve_forever()
