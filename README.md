@@ -4,7 +4,7 @@ The harness is the rocket. The model is the pilot.
 
 Rocket is a model-agnostic harness that turns an app idea into a verified, store-ready Flutter app and can ship it to TestFlight under the user's own developer account. Product goal: [docs/VISION.md](docs/VISION.md).
 
-This repository is **new work written during the Meta Global AI Developer Hackathon (Oct 27 – Nov 4 2026)**. It is not the private Ive product.
+This repository is **new work written during the Meta Global AI Developer Hackathon (Oct 27 – Nov 4 2026)**.
 
 ![Rocket studio: a coffee shop app built by Muse Spark, with the build steps, cost, and phone preview](docs/images/studio.jpg)
 
