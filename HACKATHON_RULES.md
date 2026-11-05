@@ -37,7 +37,7 @@ anything political or about war, basic RAG apps, simple image analyzers, simple
 
 1. Pass/fail: fits a problem statement ("Build for Your World" or "Push the Frontier")
    and reasonably uses Meta models.
-2. Scored 0–10 on the official rubric. TODO: paste the rubric table here.
+2. Scored 0–10 on the official rubric published on the hackathon page.
 3. Top 5 per track: judges watch demo videos live and rank them.
 
 ## Engineering rules for this repo

@@ -223,6 +223,7 @@ class HarnessUI:
                     "ok": result.get("ok"),
                     "error": result.get("error"),
                     "mode": mode,
+                    "model": getattr(session.pilot, "model", None),
                     "repair_rounds": result.get("repair_rounds"),
                     "tokens": result.get("tokens"),
                     "preview": (
@@ -266,6 +267,7 @@ class HarnessUI:
                     "mode": mode,
                     "kind": "improve",
                     "from_run": from_run,
+                    "model": getattr(session.pilot, "model", None),
                     "repair_rounds": result.get("repair_rounds"),
                     "tokens": result.get("tokens"),
                     "preview": (

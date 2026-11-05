@@ -24,6 +24,6 @@ Checks search **all of `lib/`** (and `test/` for smoke). They do not require cap
 | `kit_usage` | **WARN** if generated extra screens use fewer than 4 distinct kit widget types | 4.0 Design |
 | `not_text_only` | **WARN** if generated extra screens are Text/ListTile lists without cards and emoji or icons | 4.0 Design / 4.2 Minimum Functionality |
 
-There are **14** checks (12 from earlier plus 2 WARN kit checks). The original 12 still FAIL/WARN as before; `kit_usage` and `not_text_only` never FAIL.
+There are **15** checks: the original 12, `no_raw_material` (FAIL), and the two WARN kit checks. `kit_usage` and `not_text_only` never FAIL.
 
 Fixtures under `tests/fixtures/preflight/` include a passing project and one failing tree per FAIL check. `remote_code` is WARN-only. `test_relocated_layout_still_passes` moves files off capsule paths and still expects PASS.

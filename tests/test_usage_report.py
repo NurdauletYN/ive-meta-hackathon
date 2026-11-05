@@ -74,3 +74,15 @@ def test_patch_metause_replaces_markers(tmp_path: Path) -> None:
     assert "### Usage" in text
     assert text.startswith("intro")
     assert text.strip().endswith("end")
+
+
+def test_fake_rows_excluded_and_open_model_claim_follows_the_log() -> None:
+    base = {"stage": "spec", "input_tokens": 1, "cached_tokens": 0, "output_tokens": 1, "est_cost_usd": 0.5}
+    rows = [{**base, "model": "fake"}, {**base, "model": "muse-spark-1.3"}]
+    md = render_usage(rows)
+    assert "| fake |" not in md
+    assert "FakePilot rows (1) are excluded" in md
+    assert "no live calls in this log" in md
+    live = render_usage([*rows, {**base, "model": "meta-models/muse-spark-open-1026"}])
+    assert "Muse Spark Open: 1 live calls" in live
+    assert "no live calls in this log" not in live

@@ -82,13 +82,20 @@ function addTokens(input, output) {
   if (el) el.textContent = `${tokensIn + tokensOut} tokens · ${tokensIn} in / ${tokensOut} out`;
 }
 
-function setUsedModel(pilot) {
+// Footer credit: only for a pilot that actually answered this build (it logged tokens).
+// Muse Spark Open gets its attribution only when that pilot really ran.
+function setUsedModel(pilot, model, calls) {
   const el = $("used-model");
   if (!el) return;
-  if (pilot === "baseten") el.textContent = "Built with Muse Spark Open";
-  else if (pilot === "muse") el.textContent = "Built with Muse Spark";
+  if (!pilot || !calls) {
+    el.textContent = "";
+    return;
+  }
+  const id = model && model !== pilot ? ` (${model})` : "";
+  if (pilot === "baseten") el.textContent = `Built with Muse Spark Open${id}`;
+  else if (pilot === "muse") el.textContent = `Built with Muse Spark${id}`;
   else if (pilot === "fake") el.textContent = "Offline demo (no API)";
-  else el.textContent = "";
+  else el.textContent = `Built with ${pilot}${id}`;
 }
 
 function thinkingDots() {
@@ -525,7 +532,7 @@ async function fillEvidence(runId) {
   const summary = job.summary || {};
   const tokens = summary.tokens || {};
   const pilot = job.pilot || $("pilot").value;
-  setUsedModel(pilot);
+  setUsedModel(pilot, summary.model, Number(tokens.input || 0) + Number(tokens.output || 0));
   const repairs = summary.repair_rounds ?? repairSeen;
   const costUsd = tokens.est_cost_usd ?? cost;
   $("evidence-meta").textContent =
@@ -636,7 +643,7 @@ async function send(ev) {
   active.clear();
   active.add(runId);
   resetTurn();
-  setUsedModel(body.pilot);
+  setUsedModel(null);
   $("phones").innerHTML = "";
   const card = phoneCard({ id: `phone-${runId}`, label: improving ? "update" : "preview", small: false });
   $("phones").appendChild(card);

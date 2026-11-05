@@ -64,7 +64,18 @@ def aggregate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+def _is_fake(row: dict[str, Any]) -> bool:
+    return str(row.get("model") or "") == "fake"
+
+
+def _is_open_model(row: dict[str, Any]) -> bool:
+    return "muse-spark-open" in str(row.get("model") or "")
+
+
 def render_usage(rows: list[dict[str, Any]]) -> str:
+    fake_rows = sum(1 for row in rows if _is_fake(row))
+    rows = [row for row in rows if not _is_fake(row)]
+    open_calls = sum(1 for row in rows if _is_open_model(row))
     agg = aggregate(rows)
     lines = [
         "### Usage by model and stage",
@@ -93,8 +104,14 @@ def render_usage(rows: list[dict[str, Any]]) -> str:
         )
     lines += [
         "",
+        f"Offline FakePilot rows ({fake_rows}) are excluded from this table.",
         "SAM 3.1 rows are Day 1 history; that path was removed from the product.",
         "This table is usage, not a quality eval. Infra timeouts still appear as calls with `ok: false`.",
+        (
+            f"Muse Spark Open: {open_calls} live calls in this log."
+            if open_calls
+            else "Muse Spark Open: **no live calls in this log** (not used for any number or build reported here)."
+        ),
         "",
     ]
     return "\n".join(lines)

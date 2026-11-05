@@ -35,7 +35,7 @@ Track recommendation: **Indie Developer**. Problem statement: **Push the Frontie
 
 - [ ] 3-minute video (problem, Rocket/Pilot, live design, live build + guard reject, results, limits).
 - [ ] README: NEW vs PRE-EXISTING, 5-minute reproduce, results, mocks called out.
-- [ ] Tag `v0.3-submission`. Submit via CV. Verify repo + video logged-out.
+- [ ] Tag `v1.2-submission`. Submit via CV. Verify repo + video logged-out.
 
 ## Cut lines
 
